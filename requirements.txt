@@ -1,0 +1,97 @@
+# =============================================================================
+# COMPLETE REQUIREMENTS FOR PADEL SCORING SYSTEM
+# Installation: pip3 install --break-system-packages -r requirements.txt
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# FLASK WEB FRAMEWORK & EXTENSIONS
+# -----------------------------------------------------------------------------
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-SocketIO==5.3.4
+Werkzeug==2.3.7
+
+# -----------------------------------------------------------------------------
+# SOCKET.IO FOR REAL-TIME COMMUNICATION
+# -----------------------------------------------------------------------------
+python-socketio==5.9.0
+python-engineio==4.7.1
+websocket-client==1.6.3
+
+# -----------------------------------------------------------------------------
+# ADAFRUIT HARDWARE LIBRARIES (Raspberry Pi)
+# -----------------------------------------------------------------------------
+# Blinka - CircuitPython compatibility layer for Linux/Raspberry Pi
+adafruit-blinka==8.20.0
+
+# VL53L0X Time-of-Flight Distance Sensor
+adafruit-circuitpython-vl53l0x==3.6.16
+
+# Bus device support
+adafruit-circuitpython-busdevice==5.2.6
+
+# Digital I/O support
+adafruit-circuitpython-requests==1.13.1
+
+# -----------------------------------------------------------------------------
+# SYSTEM & GPIO LIBRARIES
+# -----------------------------------------------------------------------------
+# Raspberry Pi GPIO library (optional, Blinka handles most GPIO)
+# RPi.GPIO==0.7.1  # Commented out - conflicts with Blinka, use only if needed
+
+# Pure Python I2C interface
+Adafruit-PureIO==1.1.11
+
+# Platform detection
+adafruit-platformdetect==3.47.0
+
+# -----------------------------------------------------------------------------
+# PYTHON STANDARD LIBRARIES EXTENSIONS
+# -----------------------------------------------------------------------------
+requests==2.31.0
+urllib3==2.0.4
+certifi==2023.7.22
+charset-normalizer==3.2.0
+idna==3.4
+
+# -----------------------------------------------------------------------------
+# DATE & TIME UTILITIES
+# -----------------------------------------------------------------------------
+python-dateutil==2.8.2
+
+# -----------------------------------------------------------------------------
+# ASYNC SUPPORT
+# -----------------------------------------------------------------------------
+eventlet==0.33.3
+greenlet==2.0.2
+
+# -----------------------------------------------------------------------------
+# PRODUCTION SERVER (OPTIONAL)
+# -----------------------------------------------------------------------------
+gunicorn==21.2.0
+
+# -----------------------------------------------------------------------------
+# DEVELOPMENT TOOLS (OPTIONAL)
+# -----------------------------------------------------------------------------
+# Uncomment for development
+# pytest==7.4.0
+# pytest-cov==4.1.0
+
+# =============================================================================
+# INSTALLATION NOTES
+# =============================================================================
+# 
+# For Raspberry Pi OS Bookworm and later:
+#   sudo pip3 install --break-system-packages -r requirements.txt
+#
+# For older Raspberry Pi OS versions:
+#   pip3 install -r requirements.txt
+#
+# Hardware Setup Required:
+#   - Enable I2C: sudo raspi-config -> Interface Options -> I2C -> Enable
+#   - Reboot after enabling I2C
+#
+# Verify Installation:
+#   python3 -c "import flask; import socketio; import adafruit_vl53l0x; print('✅ All imports OK')"
+#
+# =============================================================================
