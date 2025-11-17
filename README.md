@@ -1,4 +1,4 @@
-🏓 ALMUS Padel Scoring System
+🏓 SUMMA Padel Scoring System
 <div align="center">
 Version
 Python
