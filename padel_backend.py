@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Padel Scoreboard Backend with Socket.IO Integration
-Real-time scoring system with VL53L0X sensor support
+Padel Scoreboard Backend with Socket.IO Integration and Sensor Validation
+Real-time scoring system with VL53L5CX sensor support
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -12,12 +12,24 @@ import json
 from datetime import datetime
 import os
 import threading
+from smbus2 import SMBus, i2c_msg
+import time
 
 app = Flask(__name__)
 CORS(app, cors_allowed_origins="*")
 
 # Initialize Socket.IO with CORS support
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', logger=True, engineio_logger=False)
+
+# Sensor validation state
+sensor_validation = {
+    'validated': False,
+    'sensor_1_address': None,
+    'sensor_2_address': None,
+    'status': 'pending',  # pending, valid, error
+    'error_message': None,
+    'timestamp': None
+}
 
 # Enhanced game state
 game_state = {
@@ -56,6 +68,81 @@ match_storage = {
 }
 
 # =============================================================================
+# SENSOR VALIDATION FUNCTIONS
+# =============================================================================
+
+def validate_sensors():
+    """Validate that two VL53L5CX sensors are on different I2C addresses"""
+    global sensor_validation
+    
+    print("\n🔍 Validating VL53L5CX sensors...")
+    
+    try:
+        bus = SMBus(1)
+        detected_addresses = []
+        
+        # Scan for sensors at expected addresses
+        for addr in [0x29, 0x39]:
+            try:
+                msg = i2c_msg.write(addr, [0x00])
+                bus.i2c_rdwr(msg)
+                detected_addresses.append(addr)
+                print(f"   ✓ Sensor found at 0x{addr:02X}")
+            except:
+                pass
+        
+        bus.close()
+        
+        # Check validation results
+        if len(detected_addresses) == 2 and 0x29 in detected_addresses and 0x39 in detected_addresses:
+            sensor_validation['validated'] = True
+            sensor_validation['sensor_1_address'] = 0x39
+            sensor_validation['sensor_2_address'] = 0x29
+            sensor_validation['status'] = 'valid'
+            sensor_validation['error_message'] = None
+            sensor_validation['timestamp'] = datetime.now().isoformat()
+            print("✅ Sensor validation PASSED - Both sensors at different addresses")
+            return True
+        elif len(detected_addresses) == 2 and detected_addresses[0] == detected_addresses[1]:
+            sensor_validation['validated'] = False
+            sensor_validation['status'] = 'error'
+            sensor_validation['error_message'] = 'ERROR 1: Both sensors at same address 0x29 - Restart SUMMA'
+            sensor_validation['timestamp'] = datetime.now().isoformat()
+            print(f"❌ Sensor validation FAILED - Both sensors at 0x29")
+            return False
+        elif len(detected_addresses) == 0:
+            sensor_validation['validated'] = False
+            sensor_validation['status'] = 'error'
+            sensor_validation['error_message'] = 'ERROR 1: No sensors detected - Restart SUMMA'
+            sensor_validation['timestamp'] = datetime.now().isoformat()
+            print(f"❌ Sensor validation FAILED - No sensors detected")
+            return False
+        else:
+            sensor_validation['validated'] = False
+            sensor_validation['status'] = 'error'
+            sensor_validation['error_message'] = f'ERROR 1: Only {len(detected_addresses)} sensor(s) detected - Restart SUMMA'
+            sensor_validation['timestamp'] = datetime.now().isoformat()
+            print(f"❌ Sensor validation FAILED - Only {len(detected_addresses)} sensor(s)")
+            return False
+            
+    except Exception as e:
+        sensor_validation['validated'] = False
+        sensor_validation['status'] = 'error'
+        sensor_validation['error_message'] = f'ERROR 1: Sensor check failed - Restart SUMMA'
+        sensor_validation['timestamp'] = datetime.now().isoformat()
+        print(f"❌ Sensor validation ERROR: {e}")
+        return False
+
+# Run sensor validation on startup
+def run_initial_sensor_validation():
+    """Run sensor validation after a short delay to allow system to stabilize"""
+    time.sleep(2)  # Wait for system to be ready
+    result = validate_sensors()
+    # Broadcast validation result to all connected clients
+    socketio.emit('sensor_validation_result', sensor_validation)
+    print(f"📡 Sensor validation result broadcasted: {sensor_validation['status']}")
+
+# =============================================================================
 # SOCKET.IO EVENT HANDLERS
 # =============================================================================
 
@@ -64,6 +151,8 @@ def handle_connect():
     """Handle client connection"""
     print(f'🔌 Client connected: {request.sid}')
     emit('game_state_update', game_state)
+    # Send current sensor validation status
+    emit('sensor_validation_result', sensor_validation)
     return True
 
 @socketio.on('disconnect')
@@ -76,6 +165,12 @@ def handle_request_game_state():
     """Handle request for current game state"""
     print(f'📡 Game state requested by: {request.sid}')
     emit('game_state_update', game_state)
+
+@socketio.on('request_sensor_validation')
+def handle_request_sensor_validation():
+    """Handle request for sensor validation status"""
+    print(f'📡 Sensor validation requested by: {request.sid}')
+    emit('sensor_validation_result', sensor_validation)
 
 @socketio.on('sensor_point_scored')
 def handle_sensor_point(data):
@@ -127,6 +222,7 @@ def broadcast_match_won():
 def add_to_history(action, team, score_before, score_after, game_before, game_after, set_before, set_after):
     """Add action to match history"""
     global game_state
+    
     history_entry = {
         'timestamp': datetime.now().isoformat(),
         'action': action,
@@ -152,6 +248,7 @@ def calculate_match_statistics():
     
     black_points = len([h for h in game_state['match_history'] if h['action'] == 'point' and h['team'] == 'black'])
     yellow_points = len([h for h in game_state['match_history'] if h['action'] == 'point' and h['team'] == 'yellow'])
+    
     black_games = len([h for h in game_state['match_history'] if h['action'] == 'game' and h['team'] == 'black'])
     yellow_games = len([h for h in game_state['match_history'] if h['action'] == 'game' and h['team'] == 'yellow'])
     
@@ -202,7 +299,6 @@ def store_match_data():
         'match_summary': create_match_summary(stats, sets_display),
         'timestamp': game_state['match_end_time']
     }
-    
     match_storage['display_shown'] = False
     print(f"✅ Match data stored: {match_storage['match_data']['winner_name']} wins!")
 
@@ -432,7 +528,7 @@ def process_subtract_point(team):
             game_state['game_1'] -= 1
             game_state['score_1'] = 40
             game_state['score_2'] = 0
-            game_state['point_1'] = max(0, game_state['point_1'] - 1)
+        game_state['point_1'] = max(0, game_state['point_1'] - 1)
     
     elif team == 'yellow':
         current_score = game_state['score_2']
@@ -446,7 +542,7 @@ def process_subtract_point(team):
             game_state['game_2'] -= 1
             game_state['score_2'] = 40
             game_state['score_1'] = 0
-            game_state['point_2'] = max(0, game_state['point_2'] - 1)
+        game_state['point_2'] = max(0, game_state['point_2'] - 1)
     
     add_to_history('point_subtract', team,
                   score_before,
@@ -458,7 +554,6 @@ def process_subtract_point(team):
     
     game_state['last_updated'] = datetime.now().isoformat()
     broadcast_game_state()
-    
     print(f"➖ Point subtracted from {team} team")
     
     return {
@@ -520,6 +615,11 @@ def get_game_state():
     response_data['match_storage_available'] = match_storage['match_completed'] and not match_storage['display_shown']
     return jsonify(response_data)
 
+@app.route('/sensor_validation', methods=['GET'])
+def get_sensor_validation():
+    """Get sensor validation status"""
+    return jsonify(sensor_validation)
+
 @app.route('/get_match_data', methods=['GET'])
 def get_match_data():
     """Get stored match data"""
@@ -560,8 +660,10 @@ def get_match_history():
     
     black_points = len([h for h in game_state['match_history'] if h['action'] == 'point' and h['team'] == 'black'])
     yellow_points = len([h for h in game_state['match_history'] if h['action'] == 'point' and h['team'] == 'yellow'])
+    
     black_games = len([h for h in game_state['match_history'] if h['action'] == 'game' and h['team'] == 'black'])
     yellow_games = len([h for h in game_state['match_history'] if h['action'] == 'game' and h['team'] == 'yellow'])
+    
     black_sets = len([h for h in game_state['match_history'] if h['action'] == 'set' and h['team'] == 'black'])
     yellow_sets = len([h for h in game_state['match_history'] if h['action'] == 'set' and h['team'] == 'yellow'])
     
@@ -616,6 +718,7 @@ def reset_match():
     global game_state, match_storage
     
     wipe_match_storage()
+    
     game_state = {
         'score_1': 0,
         'score_2': 0,
@@ -660,6 +763,7 @@ def health_check():
             'completed': match_storage['match_completed'],
             'displayed': match_storage['display_shown']
         },
+        'sensor_validation': sensor_validation,
         'files': {
             'logo_png': 'found' if logo_exists else 'missing',
             'back_png': 'found' if back_exists else 'missing'
@@ -676,6 +780,10 @@ if __name__ == '__main__':
     print("🔌 Socket.IO enabled for real-time updates")
     print("🌐 Access at: http://127.0.0.1:5000")
     print("=" * 70)
+    
+    # Start sensor validation in background thread
+    validation_thread = threading.Thread(target=run_initial_sensor_validation, daemon=True)
+    validation_thread.start()
     
     # LOCALHOST ONLY - For offline Raspberry Pi operation
     socketio.run(app, debug=False, host='127.0.0.1', port=5000, allow_unsafe_werkzeug=True)
