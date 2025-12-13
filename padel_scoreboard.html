@@ -3,52 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Padel Scoreboard - ALMUS SUMMA</title>
+    <title>Padel Scoreboard - ALMUS</title>
     <link rel="stylesheet" href="padel_css.css">
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-    <!-- Welcome Toast (Success) -->
-    <div id="welcomeToast" class="toast toast-success">
-        <div class="toast-content">
-            <div class="toast-icon">✅</div>
-            <div class="toast-message">
-                <div class="toast-title">Welcome to SUMMA</div>
-                <div class="toast-subtitle">Sensor validation successful. System ready!</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Error Toast -->
-    <div id="errorToast" class="toast toast-error">
-        <div class="toast-content">
-            <div class="toast-icon">❌</div>
-            <div class="toast-message">
-                <div class="toast-title" id="errorMessage">ERROR 1: Restart the SUMMA</div>
-                <div class="toast-subtitle">Both sensors on same address</div>
-            </div>
-            <button id="closeErrorToast" class="toast-close">×</button>
-        </div>
-    </div>
-
     <div class="scoreboard">
         <!-- Header -->
         <div class="header">
             <div class="tournament-info">
-                <div class="tournament-title">ALMUS - PADEL TOURNAMENT</div>
+                <span class="tournament-title">ALMUS PADEL TOURNAMENT</span>
             </div>
-            
             <div class="time-display" id="timeDisplay">19:22</div>
-            
             <div class="live-indicator">
                 <div class="live-dot"></div>
-                <div class="live-text">LIVE</div>
+                <span class="live-text">LIVE</span>
             </div>
-            
             <div class="logo-container">
-                <div class="logo no-image" id="logoClick">
-                    <img src="logo.png" alt="ALMUS Logo" class="logo-img" id="logoImg">
-                    <div class="logo-fallback">A</div>
+                <div class="logo" id="logoClick">
+                    <img src="logo.png" alt="Logo" class="logo-img" id="logoImg">
+                    <div class="logo-fallback">AL</div>
                 </div>
                 <div class="logo-text">ALMUS<br>PADEL</div>
             </div>
@@ -56,96 +29,110 @@
 
         <!-- Main Scoreboard -->
         <div class="main-scoreboard">
-            <!-- BLACK TEAM -->
-            <div class="team-section black-team">
+            <!-- Black Team -->
+            <div class="team-section black-team" id="blackTeam">
                 <div class="team-header">
                     <div class="team-label">
                         <div class="team-circle black-circle"></div>
-                        <div class="team-name">BLACK</div>
+                        <span class="team-name">BLACK TEAM</span>
                     </div>
                 </div>
-                
                 <div class="score-container">
-                    <div class="team-games" id="gamesBlack">0</div>
                     <div class="score-main" id="scoreBlack">0</div>
+                    <div class="team-games" id="gamesBlack">0</div>
                 </div>
-                
-                <div class="sets-score">
-                    <div class="sets-label">SETS</div>
-                    <div class="sets-score-number" id="setsBlack">0</div>
-                </div>
-                
                 <div class="click-feedback" id="clickFeedbackBlack">+1</div>
             </div>
 
-            <!-- YELLOW TEAM -->
-            <div class="team-section yellow-team">
+            <!-- VS Divider -->
+            <div class="vs-divider">
+                <span class="vs-text">VS</span>
+            </div>
+
+            <!-- Yellow Team -->
+            <div class="team-section yellow-team" id="yellowTeam">
                 <div class="team-header">
                     <div class="team-label">
-                        <div class="team-name">YELLOW</div>
+                        <span class="team-name">YELLOW TEAM</span>
                         <div class="team-circle yellow-circle"></div>
                     </div>
                 </div>
-                
                 <div class="score-container">
-                    <div class="team-games" id="gamesYellow">0</div>
                     <div class="score-main" id="scoreYellow">0</div>
+                    <div class="team-games" id="gamesYellow">0</div>
                 </div>
-                
-                <div class="sets-score">
-                    <div class="sets-label">SETS</div>
-                    <div class="sets-score-number" id="setsYellow">0</div>
-                </div>
-                
                 <div class="click-feedback" id="clickFeedbackYellow">+1</div>
             </div>
         </div>
 
-        <!-- Control Panel -->
-        <div class="control-panel" id="controlPanel" style="display: none;">
-            <button class="control-btn" onclick="addBlackPoint()">BLACK +1</button>
-            <button class="control-btn" onclick="addYellowPoint()">YELLOW +1</button>
-            <button class="control-btn" onclick="resetMatch()">RESET</button>
+        <!-- Sets Score Panel -->
+        <div class="sets-score">
+            <span class="sets-label">SETS</span>
+            <div class="sets-scores">
+                <span class="sets-score-number" id="setsBlack">0</span>
+                <span class="sets-score-number" style="color: #666;">-</span>
+                <span class="sets-score-number" id="setsYellow">0</span>
+            </div>
         </div>
 
         <!-- Winner Display -->
         <div class="winner-display" id="winnerDisplay">
-            <div class="winner-trophy">🏆</div>
-            <h1 class="winner-team-name" id="winnerTeamName">BLACK TEAM</h1>
-            <div class="winner-subtitle">WINS THE MATCH!</div>
-            
+            <div class="winner-header">
+                <div class="winner-trophy">🏆</div>
+                <h1 class="winner-title">MATCH WON!</h1>
+                <h2 class="winner-team-name" id="winnerTeamName">BLACK TEAM</h2>
+            </div>
+
             <div class="match-summary">
                 <div class="summary-item">
-                    <div class="summary-label">Final Score</div>
-                    <div class="summary-value" id="finalSetsScore">2-0</div>
+                    <span class="summary-label">Final Sets</span>
+                    <span class="summary-value" id="finalSetsScore">2-0</span>
                 </div>
                 <div class="summary-item">
-                    <div class="summary-label">Match Duration</div>
-                    <div class="summary-value" id="matchDuration">45 minutes</div>
+                    <span class="summary-label">Duration</span>
+                    <span class="summary-value" id="matchDuration">0m 0s</span>
                 </div>
             </div>
-            
-            <div class="table-container">
-                <h3>Sets Breakdown</h3>
-                <table class="sets-table">
-                    <thead>
-                        <tr>
-                            <th>Set</th>
-                            <th>Black</th>
-                            <th>Yellow</th>
-                        </tr>
-                    </thead>
-                    <tbody id="setsTableBody"></tbody>
-                </table>
+
+            <div class="sets-table-section">
+                <div class="table-container">
+                    <h3 class="table-title">Sets History</h3>
+                    <table class="sets-table">
+                        <thead>
+                            <tr>
+                                <th>Set</th>
+                                <th>Black Team</th>
+                                <th>Yellow Team</th>
+                                <th>Winner</th>
+                            </tr>
+                        </thead>
+                        <tbody id="setsTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 20px;">Match in progress...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            
+
             <div class="winner-actions">
-                <button class="action-button new-match-btn" onclick="startNewMatch()">New Match</button>
-                <button class="action-button share-btn" onclick="shareMatch()">Share Results</button>
+                <button class="action-button new-match-btn" onclick="newMatch()">NEW MATCH</button>
+                <button class="action-button share-btn" onclick="shareResults()">SHARE RESULTS</button>
             </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel" style="display: none;" id="controlPanel">
+            <button class="control-btn" onclick="addPointManual('black')">BLACK +1</button>
+            <button class="control-btn" onclick="addPointManual('yellow')">YELLOW +1</button>
+            <button class="control-btn" onclick="resetMatch()">RESET</button>
         </div>
     </div>
 
+    <!-- Socket.IO Client Library -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Main JavaScript -->
     <script src="padel_js.js"></script>
 </body>
 </html>
