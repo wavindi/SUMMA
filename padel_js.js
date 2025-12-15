@@ -161,7 +161,7 @@ function removeToast(toast) {
 }
 
 // =================================================================================================
-// SETUP CLICKABLE TEAMS
+// SETUP CLICKABLE TEAMS - WITH WINNER SCREEN RESET
 // =================================================================================================
 
 function setupClickableTeams() {
@@ -174,6 +174,15 @@ function setupClickableTeams() {
             if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) {
                 return;
             }
+            
+            // If winner screen is showing, reset match instead of adding point
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+                console.log('👆 Winner screen visible - resetting match');
+                resetMatchSilent();
+                return;
+            }
+            
             console.log('👆 Black team clicked');
             addPointManual('black');
             hideSplashOnFirstPoint();
@@ -187,6 +196,15 @@ function setupClickableTeams() {
             if (e.target.closest('#controlPanel')) {
                 return;
             }
+            
+            // If winner screen is showing, reset match instead of adding point
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+                console.log('👆 Winner screen visible - resetting match');
+                resetMatchSilent();
+                return;
+            }
+            
             console.log('👆 Yellow team clicked');
             addPointManual('yellow');
             hideSplashOnFirstPoint();
@@ -440,50 +458,64 @@ function displayWinnerWithData(matchData) {
     }
 }
 
-async function newMatch() {
-    if (confirm('Start a new match? Current match will be reset.')) {
-        try {
-            const response = await fetch(`${API_BASE}/reset_match`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
+// =================================================================================================
+// MATCH RESET - SILENT VERSION (NO CONFIRMATION)
+// =================================================================================================
+
+async function resetMatchSilent() {
+    console.log('🔄 Resetting match silently...');
+    
+    try {
+        const response = await fetch(`${API_BASE}/reset_match`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('✅ Match reset successfully');
             
-            const data = await response.json();
+            // Reset local variables
+            score_1 = 0;
+            score_2 = 0;
+            games_1 = 0;
+            games_2 = 0;
+            sets_1 = 0;
+            sets_2 = 0;
+            matchWon = false;
+            winnerData = null;
+            setsHistory = [];
+            matchStartTime = Date.now();
             
-            if (data.success) {
-                console.log('✅ Match reset successfully');
-                const winnerDisplay = document.getElementById('winnerDisplay');
-                if (winnerDisplay) {
-                    winnerDisplay.style.display = 'none';
-                }
-                location.reload();
+            // Hide winner display
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            if (winnerDisplay) {
+                winnerDisplay.style.display = 'none';
             }
-        } catch (error) {
-            console.error('❌ Error resetting match:', error);
-            alert('Error resetting match: ' + error.message);
+            
+            // Update scoreboard
+            updateDisplay();
+            
+            console.log('🎮 Ready for new match');
+        } else {
+            console.error('❌ Failed to reset match');
         }
+    } catch (error) {
+        console.error('❌ Error resetting match:', error);
     }
 }
 
+// Keep the original reset function for manual control panel use
 async function resetMatch() {
     if (confirm('Reset current match? All scores will be cleared.')) {
-        try {
-            const response = await fetch(`${API_BASE}/reset_match`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                console.log('✅ Match reset successfully');
-                location.reload();
-            }
-        } catch (error) {
-            console.error('❌ Error resetting match:', error);
-            alert('Error resetting match: ' + error.message);
-        }
+        await resetMatchSilent();
     }
+}
+
+// Update newMatch function to use silent reset
+async function newMatch() {
+    await resetMatchSilent();
 }
 
 function shareResults() {
