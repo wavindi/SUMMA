@@ -3,75 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Padel Scoreboard - ALMUS</title>
+    <title>Padel Scoreboard</title>
     <link rel="stylesheet" href="padel_css.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
+    <!-- SPLASH SCREEN -->
+    <div id="splashScreen" class="splash-screen active">
+        <div class="splash-content">
+            <img src="summa.png" alt="SUMMA" class="splash-logo">
+            <div class="splash-text">SUMMA</div>
+            <div class="splash-subtitle">Tap anywhere to start</div>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+
     <div class="scoreboard">
         <!-- Header -->
         <div class="header">
             <div class="tournament-info">
-                <span class="tournament-title">ALMUS PADEL TOURNAMENT</span>
+                <div class="tournament-title">PADEL CHAMPIONSHIP</div>
             </div>
             <div class="time-display" id="timeDisplay">19:22</div>
             <div class="live-indicator">
                 <div class="live-dot"></div>
-                <span class="live-text">LIVE</span>
+                <div class="live-text">LIVE</div>
             </div>
             <div class="logo-container">
                 <div class="logo" id="logoClick">
                     <img src="logo.png" alt="Logo" class="logo-img" id="logoImg">
-                    <div class="logo-fallback">AL</div>
+                    <div class="logo-fallback">P</div>
                 </div>
-                <div class="logo-text">ALMUS<br>PADEL</div>
+                <div class="logo-text">PADEL<br>ELITE</div>
             </div>
         </div>
 
         <!-- Main Scoreboard -->
         <div class="main-scoreboard">
             <!-- Black Team -->
-            <div class="team-section black-team" id="blackTeam">
+            <div class="team-section black-team">
                 <div class="team-header">
                     <div class="team-label">
                         <div class="team-circle black-circle"></div>
-                        <span class="team-name">BLACK TEAM</span>
+                        <div class="team-name">BLACK</div>
                     </div>
                 </div>
                 <div class="score-container">
-                    <div class="score-main" id="scoreBlack">0</div>
                     <div class="team-games" id="gamesBlack">0</div>
+                    <div class="score-main" id="scoreBlack">0</div>
                 </div>
                 <div class="click-feedback" id="clickFeedbackBlack">+1</div>
             </div>
 
-            <!-- VS Divider -->
-            <div class="vs-divider">
-                <span class="vs-text">VS</span>
-            </div>
-
             <!-- Yellow Team -->
-            <div class="team-section yellow-team" id="yellowTeam">
+            <div class="team-section yellow-team">
                 <div class="team-header">
                     <div class="team-label">
-                        <span class="team-name">YELLOW TEAM</span>
                         <div class="team-circle yellow-circle"></div>
+                        <div class="team-name">YELLOW</div>
                     </div>
                 </div>
                 <div class="score-container">
-                    <div class="score-main" id="scoreYellow">0</div>
                     <div class="team-games" id="gamesYellow">0</div>
+                    <div class="score-main" id="scoreYellow">0</div>
                 </div>
                 <div class="click-feedback" id="clickFeedbackYellow">+1</div>
+            </div>
+
+            <!-- VS Divider -->
+            <div class="vs-divider">
+                <div class="vs-text">VS</div>
             </div>
         </div>
 
         <!-- Sets Score Panel -->
         <div class="sets-score">
-            <span class="sets-label">SETS</span>
+            <div class="sets-label">SETS</div>
             <div class="sets-scores">
-                <span class="sets-score-number" id="setsBlack">0</span>
-                <span class="sets-score-number" style="color: #666;">-</span>
-                <span class="sets-score-number" id="setsYellow">0</span>
+                <div class="sets-score-number" id="setsBlack">0</div>
+                <div style="color: #d4af37; font-size: 40px;">-</div>
+                <div class="sets-score-number" id="setsYellow">0</div>
             </div>
         </div>
 
@@ -79,60 +93,51 @@
         <div class="winner-display" id="winnerDisplay">
             <div class="winner-header">
                 <div class="winner-trophy">🏆</div>
-                <h1 class="winner-title">MATCH WON!</h1>
-                <h2 class="winner-team-name" id="winnerTeamName">BLACK TEAM</h2>
+                <div class="winner-title">MATCH WINNER</div>
+                <div class="winner-team-name" id="winnerTeamName">BLACK TEAM</div>
             </div>
-
             <div class="match-summary">
                 <div class="summary-item">
-                    <span class="summary-label">Final Sets</span>
-                    <span class="summary-value" id="finalSetsScore">2-0</span>
+                    <div class="summary-label">Final Sets</div>
+                    <div class="summary-value" id="finalSetsScore">2-0</div>
                 </div>
                 <div class="summary-item">
-                    <span class="summary-label">Duration</span>
-                    <span class="summary-value" id="matchDuration">0m 0s</span>
+                    <div class="summary-label">Duration</div>
+                    <div class="summary-value" id="matchDuration">45 min</div>
                 </div>
             </div>
-
             <div class="sets-table-section">
                 <div class="table-container">
-                    <h3 class="table-title">Sets History</h3>
+                    <div class="table-title">SETS BREAKDOWN</div>
                     <table class="sets-table">
                         <thead>
                             <tr>
                                 <th>Set</th>
-                                <th>Black Team</th>
-                                <th>Yellow Team</th>
+                                <th>Black</th>
+                                <th>Yellow</th>
                                 <th>Winner</th>
                             </tr>
                         </thead>
-                        <tbody id="setsTableBody">
-                            <tr>
-                                <td colspan="4" style="text-align: center; padding: 20px;">Match in progress...</td>
-                            </tr>
-                        </tbody>
+                        <tbody id="setsTableBody"></tbody>
                     </table>
                 </div>
             </div>
-
             <div class="winner-actions">
                 <button class="action-button new-match-btn" onclick="newMatch()">NEW MATCH</button>
-                <button class="action-button share-btn" onclick="shareResults()">SHARE RESULTS</button>
+                <button class="action-button share-btn" onclick="shareResults()">SHARE</button>
             </div>
         </div>
 
         <!-- Control Panel -->
-        <div class="control-panel" style="display: none;" id="controlPanel">
-            <button class="control-btn" onclick="addPointManual('black')">BLACK +1</button>
-            <button class="control-btn" onclick="addPointManual('yellow')">YELLOW +1</button>
-            <button class="control-btn" onclick="resetMatch()">RESET</button>
+        <div class="control-panel" id="controlPanel" style="display: none;">
+            <button class="control-btn" onclick="addPointManual('black')">+1 Black</button>
+            <button class="control-btn" onclick="addPointManual('yellow')">+1 Yellow</button>
+            <button class="control-btn" onclick="subtractPoint('black')">-1 Black</button>
+            <button class="control-btn" onclick="subtractPoint('yellow')">-1 Yellow</button>
+            <button class="control-btn" onclick="resetMatch()">Reset</button>
         </div>
     </div>
 
-    <!-- Socket.IO Client Library -->
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    
-    <!-- Main JavaScript -->
     <script src="padel_js.js"></script>
 </body>
 </html>
