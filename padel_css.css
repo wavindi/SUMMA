@@ -404,234 +404,205 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Winner Display with ONLY Sets History */
+/* Winner Display - OPTIMIZED FOR ONE SCREEN */
 .winner-display {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.96) 0%, rgba(20, 20, 20, 0.98) 100%);
-    border-radius: 25px;
-    padding: 40px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(20, 20, 20, 0.98) 100%);
+    backdrop-filter: blur(30px);
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 30px;
-    backdrop-filter: blur(30px);
-    border: 4px solid rgba(212, 175, 55, 0.8);
-    box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.9),
-        0 0 80px rgba(212, 175, 55, 0.3),
-        inset 0 0 30px rgba(212, 175, 55, 0.1);
-    z-index: 100;
-    animation: winnerAppear 1.5s ease-out;
-    width: 90vw;
-    max-width: 800px;
-    max-height: 90vh;
-    overflow-y: auto;
+    justify-content: center;
+    padding: 40px;
+    gap: 25px;
+    z-index: 10000;
+    animation: winnerAppear 1s ease-out;
+    overflow: hidden;
 }
 
 @keyframes winnerAppear {
     0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.2) rotate(-15deg);
-    }
-    70% {
-        opacity: 0.9;
-        transform: translate(-50%, -50%) scale(1.05) rotate(3deg);
+        transform: scale(0.8);
     }
     100% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        transform: scale(1);
     }
 }
 
-/* Winner Header Section */
+/* Winner Header - Compact */
 .winner-header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.3);
-    padding-bottom: 30px;
+    max-width: 1200px;
 }
 
 .winner-trophy {
-    font-size: 100px;
-    animation: trophyBounce 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.9));
+    font-size: 120px;
+    animation: trophyBounce 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 50px rgba(212, 175, 55, 0.9));
 }
 
 @keyframes trophyBounce {
-    0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
-    50% { transform: translateY(-8px) scale(1.1) rotate(5deg); }
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-10px) scale(1.1); }
 }
 
 .winner-title {
     color: #d4af37;
     font-weight: 400;
-    font-size: clamp(36px, 6vw, 64px);
+    font-size: 64px;
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 4px;
+    letter-spacing: 6px;
     text-shadow:
         0 0 50px rgba(212, 175, 55, 0.9),
-        0 0 100px rgba(212, 175, 55, 0.7),
-        0 6px 12px rgba(0, 0, 0, 0.8);
-    animation: glow 3s ease-in-out infinite alternate;
-    text-align: center;
+        0 0 100px rgba(212, 175, 55, 0.7);
+    animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
     from {
         text-shadow:
             0 0 50px rgba(212, 175, 55, 0.9),
-            0 0 100px rgba(212, 175, 55, 0.7),
-            0 6px 12px rgba(0, 0, 0, 0.8);
+            0 0 100px rgba(212, 175, 55, 0.7);
     }
     to {
         text-shadow:
             0 0 80px rgba(212, 175, 55, 1),
-            0 0 160px rgba(212, 175, 55, 0.9),
-            0 10px 20px rgba(0, 0, 0, 0.9);
+            0 0 150px rgba(212, 175, 55, 0.9);
     }
 }
 
 .winner-team-name {
     color: #fff;
     font-weight: 400;
-    font-size: clamp(28px, 5vw, 48px);
+    font-size: 56px;
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 3px;
-    text-shadow:
-        0 0 30px rgba(255, 255, 255, 0.6),
-        0 4px 8px rgba(0, 0, 0, 0.8);
-    text-align: center;
+    letter-spacing: 4px;
     background: linear-gradient(45deg, #fff 0%, #d4af37 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
+/* Match Summary - Side by Side */
 .match-summary {
     display: flex;
     justify-content: center;
-    gap: 40px;
+    gap: 60px;
     align-items: center;
-    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1200px;
 }
 
 .summary-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 25px;
-    background: rgba(212, 175, 55, 0.1);
-    border-radius: 15px;
-    border: 2px solid rgba(212, 175, 55, 0.3);
+    padding: 20px 40px;
+    background: rgba(212, 175, 55, 0.15);
+    border-radius: 20px;
+    border: 3px solid rgba(212, 175, 55, 0.5);
     backdrop-filter: blur(10px);
 }
 
 .summary-label {
     color: #d4af37;
-    font-size: clamp(12px, 2vw, 16px);
+    font-size: 20px;
     font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
 }
 
 .summary-value {
     color: #fff;
-    font-size: clamp(20px, 3vw, 32px);
+    font-size: 48px;
     font-weight: 400;
     font-style: italic;
 }
 
-/* ONLY Sets Table Section */
+/* Sets Table - Bigger & Cleaner */
 .sets-table-section {
     width: 100%;
-    max-width: 600px;
+    max-width: 1000px;
 }
 
 .table-container {
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 20px;
-    border: 2px solid rgba(212, 175, 55, 0.3);
-    padding: 25px;
-    backdrop-filter: blur(15px);
-    display: flex;
-    flex-direction: column;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 25px;
+    border: 3px solid rgba(212, 175, 55, 0.5);
+    padding: 30px;
+    backdrop-filter: blur(20px);
 }
 
 .table-title {
     color: #d4af37;
-    font-size: clamp(18px, 3vw, 24px);
+    font-size: 32px;
     font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid rgba(212, 175, 55, 0.5);
 }
 
-/* Professional Sets Table */
 .sets-table {
     width: 100%;
     border-collapse: collapse;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    border-radius: 15px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .sets-table th {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.8) 0%, rgba(184, 134, 11, 0.8) 100%);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.9) 0%, rgba(184, 134, 11, 0.9) 100%);
     color: #000;
     font-weight: 400;
-    font-size: clamp(14px, 2.5vw, 18px);
-    padding: 15px 10px;
+    font-size: 24px;
+    padding: 20px 15px;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+    letter-spacing: 2px;
 }
 
 .sets-table td {
     color: #fff;
-    font-size: clamp(13px, 2.2vw, 17px);
-    padding: 15px 10px;
+    font-size: 28px;
+    padding: 20px 15px;
     text-align: center;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-    background: rgba(255, 255, 255, 0.02);
-    transition: all 0.3s ease;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+    background: rgba(255, 255, 255, 0.03);
     font-weight: 400;
 }
 
-.sets-table tr:hover td {
-    background: rgba(212, 175, 55, 0.1);
-    transform: scale(1.02);
-}
-
 .sets-table tr:nth-child(even) td {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
 }
 
-/* Winner set highlighting */
 .sets-table td.winner-set {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(184, 134, 11, 0.3) 100%);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(184, 134, 11, 0.4) 100%);
     color: #d4af37;
     font-weight: 600;
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+    font-size: 32px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
 }
 
 .team-column {
     font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 .team-column.black { 
@@ -642,25 +613,25 @@ body {
     color: #d4af37; 
 }
 
-/* Bottom Actions */
+/* Winner Actions - Bigger Buttons */
 .winner-actions {
     display: flex;
-    gap: 25px;
+    gap: 40px;
     margin-top: 20px;
 }
 
 .action-button {
-    padding: 15px 35px;
+    padding: 20px 50px;
     border: none;
-    border-radius: 20px;
+    border-radius: 25px;
     font-family: 'Anton', Arial, sans-serif;
-    font-size: clamp(14px, 2.5vw, 18px);
+    font-size: 24px;
     font-style: italic;
     cursor: pointer;
     transition: all 0.4s ease;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    letter-spacing: 3px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .new-match-btn {
@@ -669,23 +640,21 @@ body {
 }
 
 .new-match-btn:hover {
-    transform: scale(1.08) translateY(-3px);
-    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6);
-    background: linear-gradient(135deg, #f0c940 0%, #d4af37 100%);
+    transform: scale(1.1) translateY(-5px);
+    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.7);
 }
 
 .share-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border: 2px solid rgba(212, 175, 55, 0.7);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    border: 3px solid rgba(212, 175, 55, 0.8);
     color: #d4af37;
     backdrop-filter: blur(10px);
 }
 
 .share-btn:hover {
-    transform: scale(1.08) translateY(-3px);
+    transform: scale(1.1) translateY(-5px);
     border-color: rgba(212, 175, 55, 1);
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
-    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.6);
 }
 
 .action-button:active {
@@ -1145,61 +1114,69 @@ body {
     }
 }
 
-/* Responsive Design */
-@media (max-width: 900px) {
+/* Responsive for winner display */
+@media (max-width: 1200px) {
+    .winner-trophy { font-size: 100px; }
+    .winner-title { font-size: 48px; }
+    .winner-team-name { font-size: 40px; }
+    .summary-value { font-size: 36px; }
+    .sets-table th { font-size: 20px; }
+    .sets-table td { font-size: 22px; }
+    .sets-table td.winner-set { font-size: 26px; }
+}
+
+@media (max-width: 800px) {
     .winner-display {
-        width: 95vw;
-        padding: 30px 25px;
-        gap: 25px;
-    }
-    
-    .winner-trophy { font-size: 70px; }
-    
-    .match-summary {
+        padding: 20px;
         gap: 20px;
     }
     
-    .summary-item {
-        padding: 12px 20px;
+    .winner-trophy { font-size: 80px; }
+    .winner-title { font-size: 36px; }
+    .winner-team-name { font-size: 32px; }
+    
+    .match-summary {
+        gap: 30px;
+        flex-wrap: wrap;
     }
+    
+    .summary-item {
+        padding: 15px 30px;
+    }
+    
+    .summary-value { font-size: 32px; }
+    
+    .table-container {
+        padding: 20px;
+    }
+    
+    .sets-table th { font-size: 18px; padding: 15px 10px; }
+    .sets-table td { font-size: 20px; padding: 15px 10px; }
+    .sets-table td.winner-set { font-size: 24px; }
     
     .winner-actions {
         flex-direction: column;
-        gap: 15px;
+        gap: 20px;
         width: 100%;
     }
     
     .action-button {
-        padding: 12px 25px;
+        padding: 18px 40px;
+        font-size: 20px;
         width: 100%;
     }
 }
 
 @media (max-width: 600px) {
-    .winner-display {
-        padding: 25px 20px;
-        gap: 20px;
-    }
-    
     .winner-trophy { font-size: 60px; }
-    
-    .match-summary {
-        gap: 15px;
-    }
-    
-    .summary-item {
-        padding: 10px 15px;
-    }
-    
-    .table-container {
-        padding: 20px 15px;
-    }
-    
-    .sets-table th,
-    .sets-table td {
-        padding: 12px 8px;
-        font-size: clamp(11px, 2.8vw, 15px);
-    }
+    .winner-title { font-size: 28px; }
+    .winner-team-name { font-size: 24px; }
+    .summary-label { font-size: 16px; }
+    .summary-value { font-size: 28px; }
+    .table-title { font-size: 24px; }
+    .sets-table th { font-size: 16px; }
+    .sets-table td { font-size: 18px; }
+    .sets-table td.winner-set { font-size: 20px; }
 }
 
 /* Standard Responsive Design */
@@ -1260,4 +1237,3 @@ body {
         padding: 8px 15px;
     }
 }
-
