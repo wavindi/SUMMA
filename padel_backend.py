@@ -4,7 +4,7 @@ Padel Scoreboard Backend - OPTIMIZED FOR ULTRA-LOW LATENCY
 Real-time scoring with minimal delay
 WITH SIDE SWITCHING and GAME MODES (BASIC, COMPETITION, LOCK)
 
-BASIC MODE: Side switch BEFORE game 1 (on first point)
+BASIC MODE: Side switch BEFORE first point when sets are 0-0, 1-0, 0-1, or 1-1
 COMPETITION/LOCK: Side switch AFTER odd games (1, 3, 5, 7...)
 
 Rules:
@@ -135,7 +135,7 @@ game_state = {
     # Side switching
     "shouldswitchsides": False,
     "totalgamesinset": 0,
-    "initial_switch_done": False,  # NEW: Track if start-of-set switch done in BASIC mode
+    "initial_switch_done": False,  # Track if start-of-set switch done in BASIC mode
     
     # Mode: "normal", "tiebreak", "supertiebreak"
     "mode": "normal",
@@ -167,7 +167,7 @@ def check_side_switch():
     game_mode = game_state["gamemode"]
     
     if game_mode == "basic":
-        # BASIC: No switching after games (switch happens BEFORE game 1)
+        # BASIC: No switching after games (switch happens at start of each set)
         return False
     else:
         # COMPETITION and LOCK: Switch after every odd game (1, 3, 5, 7...)
@@ -367,7 +367,8 @@ def check_set_winner():
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
         game_state["shouldswitchsides"] = False
-        game_state["initial_switch_done"] = False  # Reset for new set
+        game_state["initial_switch_done"] = False  # Reset for new set - IMPORTANT!
+        print(f"→ Set won by BLACK. Score: {game_state['set1']}-{game_state['set2']}. Flag reset for new set.")
         return check_match_winner()
     
     if g2 >= 6 and g2 - g1 >= 2:
@@ -380,7 +381,8 @@ def check_set_winner():
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
         game_state["shouldswitchsides"] = False
-        game_state["initial_switch_done"] = False  # Reset for new set
+        game_state["initial_switch_done"] = False  # Reset for new set - IMPORTANT!
+        print(f"→ Set won by YELLOW. Score: {game_state['set1']}-{game_state['set2']}. Flag reset for new set.")
         return check_match_winner()
     
     # Tie-break decision at 6-6 in games
@@ -540,9 +542,10 @@ def handle_tiebreak_win(team):
     game_state["game2"] = 0
     game_state["totalgamesinset"] = 0
     game_state["shouldswitchsides"] = False
-    game_state["initial_switch_done"] = False  # Reset for new set
+    game_state["initial_switch_done"] = False  # Reset for new set - IMPORTANT!
     reset_points()
     game_state["mode"] = "normal"
+    print(f"→ Tie-break won. New set starting. Flag reset for new set.")
     check_match_winner()
 
 def handle_supertiebreak_win(team):
@@ -564,9 +567,10 @@ def handle_supertiebreak_win(team):
                       (0, 0), (game_state["game1"], game_state["game2"]), (0, 0), 
                       set_before, (game_state["set1"], game_state["set2"]))
     
-    game_state["initial_switch_done"] = False  # Reset for new set
+    game_state["initial_switch_done"] = False  # Reset (match ends but good practice)
     reset_points()
     game_state["mode"] = "normal"
+    print(f"→ Super tie-break won. Match ending.")
     check_match_winner()
 
 def process_add_point(team):
@@ -577,20 +581,26 @@ def process_add_point(team):
                 "winner": game_state["winner"], "matchwon": True}
     
     # ========================================================================
-    # BASIC MODE: Trigger initial side switch on FIRST POINT (before game 1)
+    # BASIC MODE: Trigger side switch BEFORE first point
+    # When sets are 0-0, 1-0, 0-1, or 1-1 (beginning of each set)
     # ========================================================================
     total_games = game_state["game1"] + game_state["game2"]
+    set1 = game_state["set1"]
+    set2 = game_state["set2"]
+    total_sets = set1 + set2
+    
     if (game_state["gamemode"] == "basic" and 
-        total_games == 0 and 
+        total_games == 0 and  # Games must be 0-0 (start of set)
+        total_sets in [0, 1, 2] and  # Sets are 0-0, 1-0, 0-1, or 1-1
         not game_state.get("initial_switch_done", False)):
         
         game_state["initial_switch_done"] = True
         game_state["shouldswitchsides"] = True
         game_state["totalgamesinset"] = 0
         
-        # Broadcast the side switch immediately
+        # Broadcast the side switch immediately BEFORE processing point
         broadcast_sideswitch()
-        print("→ BASIC MODE: Side switch triggered BEFORE game 1 (on first point)")
+        print(f"→ BASIC MODE: Side switch at START of set (Sets {set1}-{set2}, Games 0-0)")
     # ========================================================================
     
     score_before = (game_state["score1"], game_state["score2"])
@@ -659,7 +669,7 @@ def process_add_point(team):
     
     game_state["lastupdated"] = datetime.now().isoformat()
     
-    # Side switch only for normal game wins (not for BASIC mode, not during tie-breaks)
+    # Side switch only for normal game wins (COMPETITION/LOCK modes only)
     side_switch_needed = False
     if game_just_won and not game_state["matchwon"] and game_state["mode"] == "normal":
         side_switch_needed = check_side_switch()
@@ -943,7 +953,7 @@ if __name__ == '__main__':
     print("  • Expected response: <50ms")
     print("")
     print("GAME MODES:")
-    print("  • BASIC: Side switch BEFORE game 1 (on first point)")
+    print("  • BASIC: Side switch at START of each set (0-0, 1-0, 0-1, 1-1)")
     print("  • COMPETITION: Side switch after odd games (1, 3, 5, 7...)")
     print("  • LOCK: Same as competition (premium mode)")
     print("=" * 70)
