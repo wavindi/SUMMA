@@ -25,6 +25,15 @@ socket.on('game_state_update', (data) => {
 
 socket.on('point_scored', (data) => {
     console.log('🎯 Point scored:', data);
+    
+    // If winner screen is showing, hide it when point is scored
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+        console.log('🏆 Winner screen visible - closing on sensor point');
+        resetMatchSilent();
+        return;
+    }
+    
     showClickFeedback(data.team);
     showToast(data.action, data.team, data.game_state);
 });
@@ -65,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateTime();
     setInterval(updateTime, 1000);
     setupClickableTeams();
+    setupWinnerScreenClickDismiss();
 });
 
 // =================================================================================================
@@ -92,6 +102,30 @@ function setupSplashScreen() {
             dismissSplash();
         }
     }, 5000);
+}
+
+// =================================================================================================
+// WINNER SCREEN CLICK TO DISMISS
+// =================================================================================================
+
+function setupWinnerScreenClickDismiss() {
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    
+    if (winnerDisplay) {
+        winnerDisplay.addEventListener('click', function(e) {
+            // Don't close if clicking on buttons
+            if (e.target.closest('.action-button')) {
+                return;
+            }
+            
+            // Only close if the winner screen is actually visible
+            if (winnerDisplay.style.display === 'flex') {
+                console.log('👆 Winner screen clicked - resetting match');
+                resetMatchSilent();
+            }
+        });
+        console.log('✅ Winner screen click-to-dismiss enabled');
+    }
 }
 
 // =================================================================================================
