@@ -404,206 +404,234 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Winner Display - OPTIMIZED FOR ONE SCREEN */
+/* Winner Display with ONLY Sets History */
 .winner-display {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(20, 20, 20, 0.98) 100%);
-    backdrop-filter: blur(30px);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.96) 0%, rgba(20, 20, 20, 0.98) 100%);
+    border-radius: 25px;
+    padding: 40px;
     display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 40px;
-    gap: 25px;
-    z-index: 10000;
-    animation: winnerAppear 1s ease-out;
-    overflow: hidden;
-    cursor: pointer;
+    gap: 30px;
+    backdrop-filter: blur(30px);
+    border: 4px solid rgba(212, 175, 55, 0.8);
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.9),
+        0 0 80px rgba(212, 175, 55, 0.3),
+        inset 0 0 30px rgba(212, 175, 55, 0.1);
+    z-index: 100;
+    animation: winnerAppear 1.5s ease-out;
+    width: 90vw;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 @keyframes winnerAppear {
     0% {
         opacity: 0;
-        transform: scale(0.8);
+        transform: translate(-50%, -50%) scale(0.2) rotate(-15deg);
+    }
+    70% {
+        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(1.05) rotate(3deg);
     }
     100% {
         opacity: 1;
-        transform: scale(1);
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
     }
 }
 
-/* Winner Header - Compact */
+/* Winner Header Section */
 .winner-header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
     width: 100%;
-    max-width: 1200px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+    padding-bottom: 30px;
 }
 
 .winner-trophy {
-    font-size: 120px;
-    animation: trophyBounce 2s ease-in-out infinite;
-    filter: drop-shadow(0 0 50px rgba(212, 175, 55, 0.9));
+    font-size: 100px;
+    animation: trophyBounce 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.9));
 }
 
 @keyframes trophyBounce {
-    0%, 100% { transform: translateY(0px) scale(1); }
-    50% { transform: translateY(-10px) scale(1.1); }
+    0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+    50% { transform: translateY(-8px) scale(1.1) rotate(5deg); }
 }
 
 .winner-title {
     color: #d4af37;
     font-weight: 400;
-    font-size: 64px;
+    font-size: clamp(36px, 6vw, 64px);
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 6px;
+    letter-spacing: 4px;
     text-shadow:
         0 0 50px rgba(212, 175, 55, 0.9),
-        0 0 100px rgba(212, 175, 55, 0.7);
-    animation: glow 2s ease-in-out infinite alternate;
+        0 0 100px rgba(212, 175, 55, 0.7),
+        0 6px 12px rgba(0, 0, 0, 0.8);
+    animation: glow 3s ease-in-out infinite alternate;
+    text-align: center;
 }
 
 @keyframes glow {
     from {
         text-shadow:
             0 0 50px rgba(212, 175, 55, 0.9),
-            0 0 100px rgba(212, 175, 55, 0.7);
+            0 0 100px rgba(212, 175, 55, 0.7),
+            0 6px 12px rgba(0, 0, 0, 0.8);
     }
     to {
         text-shadow:
             0 0 80px rgba(212, 175, 55, 1),
-            0 0 150px rgba(212, 175, 55, 0.9);
+            0 0 160px rgba(212, 175, 55, 0.9),
+            0 10px 20px rgba(0, 0, 0, 0.9);
     }
 }
 
 .winner-team-name {
     color: #fff;
     font-weight: 400;
-    font-size: 56px;
+    font-size: clamp(28px, 5vw, 48px);
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
+    text-shadow:
+        0 0 30px rgba(255, 255, 255, 0.6),
+        0 4px 8px rgba(0, 0, 0, 0.8);
+    text-align: center;
     background: linear-gradient(45deg, #fff 0%, #d4af37 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-/* Match Summary - Side by Side */
 .match-summary {
     display: flex;
     justify-content: center;
-    gap: 60px;
+    gap: 40px;
     align-items: center;
-    width: 100%;
-    max-width: 1200px;
+    flex-wrap: wrap;
 }
 
 .summary-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 40px;
-    background: rgba(212, 175, 55, 0.15);
-    border-radius: 20px;
-    border: 3px solid rgba(212, 175, 55, 0.5);
+    padding: 15px 25px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
     backdrop-filter: blur(10px);
 }
 
 .summary-label {
     color: #d4af37;
-    font-size: 20px;
+    font-size: clamp(12px, 2vw, 16px);
     font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
 }
 
 .summary-value {
     color: #fff;
-    font-size: 48px;
+    font-size: clamp(20px, 3vw, 32px);
     font-weight: 400;
     font-style: italic;
 }
 
-/* Sets Table - Bigger & Cleaner */
+/* ONLY Sets Table Section */
 .sets-table-section {
     width: 100%;
-    max-width: 1000px;
+    max-width: 600px;
 }
 
 .table-container {
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 25px;
-    border: 3px solid rgba(212, 175, 55, 0.5);
-    padding: 30px;
-    backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    padding: 25px;
+    backdrop-filter: blur(15px);
+    display: flex;
+    flex-direction: column;
 }
 
 .table-title {
     color: #d4af37;
-    font-size: 32px;
+    font-size: clamp(18px, 3vw, 24px);
     font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-align: center;
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 3px solid rgba(212, 175, 55, 0.5);
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
 }
 
+/* Professional Sets Table */
 .sets-table {
     width: 100%;
     border-collapse: collapse;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .sets-table th {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.9) 0%, rgba(184, 134, 11, 0.9) 100%);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.8) 0%, rgba(184, 134, 11, 0.8) 100%);
     color: #000;
     font-weight: 400;
-    font-size: 24px;
-    padding: 20px 15px;
+    font-size: clamp(14px, 2.5vw, 18px);
+    padding: 15px 10px;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.2);
 }
 
 .sets-table td {
     color: #fff;
-    font-size: 28px;
-    padding: 20px 15px;
+    font-size: clamp(13px, 2.2vw, 17px);
+    padding: 15px 10px;
     text-align: center;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.2);
-    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.3s ease;
     font-weight: 400;
 }
 
-.sets-table tr:nth-child(even) td {
-    background: rgba(255, 255, 255, 0.06);
+.sets-table tr:hover td {
+    background: rgba(212, 175, 55, 0.1);
+    transform: scale(1.02);
 }
 
+.sets-table tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Winner set highlighting */
 .sets-table td.winner-set {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(184, 134, 11, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(184, 134, 11, 0.3) 100%);
     color: #d4af37;
     font-weight: 600;
-    font-size: 32px;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
 }
 
 .team-column {
     font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 
 .team-column.black { 
@@ -614,25 +642,25 @@ body {
     color: #d4af37; 
 }
 
-/* Winner Actions - Single Button Centered */
+/* Bottom Actions */
 .winner-actions {
     display: flex;
-    justify-content: center;
+    gap: 25px;
     margin-top: 20px;
 }
 
 .action-button {
-    padding: 20px 60px;
+    padding: 15px 35px;
     border: none;
-    border-radius: 25px;
+    border-radius: 20px;
     font-family: 'Anton', Arial, sans-serif;
-    font-size: 28px;
+    font-size: clamp(14px, 2.5vw, 18px);
     font-style: italic;
     cursor: pointer;
     transition: all 0.4s ease;
     text-transform: uppercase;
-    letter-spacing: 3px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    letter-spacing: 2px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .new-match-btn {
@@ -641,8 +669,23 @@ body {
 }
 
 .new-match-btn:hover {
-    transform: scale(1.1) translateY(-5px);
-    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.7);
+    transform: scale(1.08) translateY(-3px);
+    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6);
+    background: linear-gradient(135deg, #f0c940 0%, #d4af37 100%);
+}
+
+.share-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 2px solid rgba(212, 175, 55, 0.7);
+    color: #d4af37;
+    backdrop-filter: blur(10px);
+}
+
+.share-btn:hover {
+    transform: scale(1.08) translateY(-3px);
+    border-color: rgba(212, 175, 55, 1);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.4);
 }
 
 .action-button:active {
@@ -1102,67 +1145,61 @@ body {
     }
 }
 
-/* Responsive for winner display */
-@media (max-width: 1200px) {
-    .winner-trophy { font-size: 100px; }
-    .winner-title { font-size: 48px; }
-    .winner-team-name { font-size: 40px; }
-    .summary-value { font-size: 36px; }
-    .sets-table th { font-size: 20px; }
-    .sets-table td { font-size: 22px; }
-    .sets-table td.winner-set { font-size: 26px; }
-}
-
-@media (max-width: 800px) {
+/* Responsive Design */
+@media (max-width: 900px) {
     .winner-display {
-        padding: 20px;
+        width: 95vw;
+        padding: 30px 25px;
+        gap: 25px;
+    }
+    
+    .winner-trophy { font-size: 70px; }
+    
+    .match-summary {
         gap: 20px;
     }
     
-    .winner-trophy { font-size: 80px; }
-    .winner-title { font-size: 36px; }
-    .winner-team-name { font-size: 32px; }
-    
-    .match-summary {
-        gap: 30px;
-        flex-wrap: wrap;
-    }
-    
     .summary-item {
-        padding: 15px 30px;
+        padding: 12px 20px;
     }
-    
-    .summary-value { font-size: 32px; }
-    
-    .table-container {
-        padding: 20px;
-    }
-    
-    .sets-table th { font-size: 18px; padding: 15px 10px; }
-    .sets-table td { font-size: 20px; padding: 15px 10px; }
-    .sets-table td.winner-set { font-size: 24px; }
     
     .winner-actions {
+        flex-direction: column;
+        gap: 15px;
         width: 100%;
     }
     
     .action-button {
-        padding: 18px 50px;
-        font-size: 24px;
+        padding: 12px 25px;
         width: 100%;
     }
 }
 
 @media (max-width: 600px) {
+    .winner-display {
+        padding: 25px 20px;
+        gap: 20px;
+    }
+    
     .winner-trophy { font-size: 60px; }
-    .winner-title { font-size: 28px; }
-    .winner-team-name { font-size: 24px; }
-    .summary-label { font-size: 16px; }
-    .summary-value { font-size: 28px; }
-    .table-title { font-size: 24px; }
-    .sets-table th { font-size: 16px; }
-    .sets-table td { font-size: 18px; }
-    .sets-table td.winner-set { font-size: 20px; }
+    
+    .match-summary {
+        gap: 15px;
+    }
+    
+    .summary-item {
+        padding: 10px 15px;
+    }
+    
+    .table-container {
+        padding: 20px 15px;
+    }
+    
+    .sets-table th,
+    .sets-table td {
+        padding: 12px 8px;
+        font-size: clamp(11px, 2.8vw, 15px);
+    }
 }
 
 /* Standard Responsive Design */
@@ -1221,5 +1258,381 @@ body {
     .logo-container {
         gap: 10px;
         padding: 8px 15px;
+    }
+}
+
+/* ============================================================================
+   MODE SELECTION SCREEN
+   ============================================================================ */
+
+.mode-selection-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('back.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    padding: 40px;
+}
+
+.mode-selection-screen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(40, 50, 60, 0.95) 0%, rgba(30, 40, 50, 0.95) 100%);
+}
+
+.mode-selection-screen.active {
+    display: flex;
+    opacity: 1;
+}
+
+.mode-header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.mode-title {
+    color: #d4af37;
+    font-size: 80px;
+    font-weight: 400;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    line-height: 1;
+    text-shadow: 
+        0 0 30px rgba(212, 175, 55, 0.8),
+        0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+.mode-subtitle {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 400;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 6px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.mode-logo-top {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    z-index: 2;
+}
+
+.altus-logo {
+    width: 120px;
+    height: auto;
+    filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.5));
+}
+
+.mode-cards-container {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: stretch;
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    width: 100%;
+}
+
+.mode-card {
+    flex: 1;
+    max-width: 450px;
+    min-height: 520px;
+    border-radius: 30px;
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.mode-card:hover {
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.mode-card:active {
+    transform: translateY(-5px) scale(1.01);
+}
+
+.mode-basic,
+.mode-competition {
+    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+}
+
+.mode-tournament {
+    background: linear-gradient(135deg, #888 0%, #666 100%);
+    cursor: not-allowed;
+}
+
+.mode-tournament:hover {
+    transform: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Mode Icons */
+.mode-icon {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 30px;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mode-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.mode-tournament .mode-icon {
+    color: #000;
+}
+
+.padel-racket-icon {
+    width: 90px;
+    height: 120px;
+}
+
+.trophy-icon {
+    width: 100px;
+    height: 100px;
+}
+
+.podium-icon {
+    width: 100px;
+    height: 100px;
+}
+
+/* Mode Titles - WHITE */
+.mode-name {
+    color: #fff;  /* WHITE for all mode titles */
+    font-size: 48px;
+    font-weight: 400;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.mode-tournament .mode-name {
+    color: #fff;  /* WHITE for tournament title too */
+}
+
+/* Mode Description Text - BLACK */
+.mode-description {
+    color: #000;  /* BLACK text for descriptions */
+    font-size: 20px;
+    font-weight: 400;
+    font-style: italic;
+    text-align: center;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mode-desc-line {
+    display: block;
+}
+
+.highlight-gold {
+    color: #000;  /* BLACK for emphasized text */
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Locked Mode Text */
+.mode-locked-text {
+    color: #000;  /* BLACK text for locked mode description */
+    font-size: 18px;
+}
+
+.locked-title {
+    color: #fff;  /* WHITE for "MODE TOURNOIS" title */
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.highlight-white {
+    color: #000;  /* BLACK text for locked description */
+    font-weight: 400;
+}
+
+/* Lock Icon */
+.lock-icon {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    color: #000;
+    opacity: 0.95;
+}
+
+/* Responsive Mode Selection */
+@media (max-width: 1400px) {
+    .mode-cards-container {
+        gap: 30px;
+    }
+    
+    .mode-card {
+        max-width: 380px;
+        min-height: 480px;
+        padding: 40px 30px;
+    }
+    
+    .mode-title {
+        font-size: 64px;
+    }
+    
+    .mode-subtitle {
+        font-size: 40px;
+    }
+    
+    .mode-name {
+        font-size: 40px;
+    }
+    
+    .mode-description {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .mode-cards-container {
+        flex-direction: column;
+        gap: 25px;
+        max-width: 500px;
+    }
+    
+    .mode-card {
+        max-width: 100%;
+        min-height: auto;
+        padding: 35px 30px;
+    }
+    
+    .mode-header {
+        margin-bottom: 40px;
+    }
+    
+    .mode-title {
+        font-size: 56px;
+    }
+    
+    .mode-subtitle {
+        font-size: 32px;
+    }
+    
+    .mode-icon {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 20px;
+    }
+    
+    .mode-name {
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+    
+    .mode-description {
+        font-size: 16px;
+    }
+    
+    .altus-logo {
+        width: 100px;
+    }
+}
+
+@media (max-width: 800px) {
+    .mode-selection-screen {
+        padding: 20px;
+    }
+    
+    .mode-header {
+        margin-bottom: 30px;
+    }
+    
+    .mode-title {
+        font-size: 42px;
+        letter-spacing: 4px;
+    }
+    
+    .mode-subtitle {
+        font-size: 24px;
+    }
+    
+    .mode-logo-top {
+        top: 15px;
+        right: 15px;
+    }
+    
+    .altus-logo {
+        width: 80px;
+    }
+    
+    .mode-card {
+        padding: 30px 25px;
+    }
+    
+    .mode-icon {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .mode-name {
+        font-size: 32px;
+    }
+    
+    .mode-description {
+        font-size: 14px;
+    }
+    
+    .lock-icon svg {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mode-title {
+        font-size: 32px;
+    }
+    
+    .mode-subtitle {
+        font-size: 20px;
+    }
+    
+    .mode-name {
+        font-size: 28px;
+    }
+    
+    .mode-description {
+        font-size: 13px;
     }
 }
