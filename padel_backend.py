@@ -4,7 +4,7 @@ Padel Scoreboard Backend - OPTIMIZED FOR ULTRA-LOW LATENCY
 Real-time scoring with minimal delay
 WITH SIDE SWITCHING and GAME MODES (BASIC, COMPETITION, LOCK)
 
-BASIC MODE: Side switch BEFORE first point when sets are 0-0, 1-0, 0-1, or 1-1
+BASIC MODE: Side switch IMMEDIATELY when new set starts (0-0, 1-0, 0-1, 1-1)
 COMPETITION/LOCK: Side switch AFTER odd games (1, 3, 5, 7...)
 
 Rules:
@@ -160,6 +160,35 @@ match_storage = {
     "displayshown": False
 }
 
+def trigger_basic_mode_side_switch_if_needed():
+    """
+    BASIC MODE: Trigger side switch immediately when a new set starts.
+    Called after set ends and games reset to 0-0.
+    Checks if sets are 0-0, 1-0, 0-1, or 1-1.
+    """
+    global game_state
+    
+    if game_state["gamemode"] != "basic":
+        return
+    
+    total_games = game_state["game1"] + game_state["game2"]
+    set1 = game_state["set1"]
+    set2 = game_state["set2"]
+    total_sets = set1 + set2
+    
+    # Check if we're at start of a set that needs switching
+    if (total_games == 0 and 
+        total_sets in [0, 1, 2] and 
+        not game_state.get("initial_switch_done", False)):
+        
+        game_state["initial_switch_done"] = True
+        game_state["shouldswitchsides"] = True
+        game_state["totalgamesinset"] = 0
+        
+        # Broadcast side switch immediately
+        broadcast_sideswitch()
+        print(f"→ BASIC MODE: Side switch triggered at START of set (Sets {set1}-{set2}, Games 0-0)")
+
 def check_side_switch():
     """Check if side switch is needed based on game mode."""
     global game_state
@@ -189,6 +218,11 @@ def handle_connect():
     print(f"✓ Client connected: {request.sid}")
     emit('gamestateupdate', game_state)
     emit('sensor_validation_result', sensor_validation)
+    
+    # BASIC MODE: Trigger initial side switch if match just started
+    if game_state["gamemode"] == "basic":
+        trigger_basic_mode_side_switch_if_needed()
+    
     return True
 
 @socketio.on('disconnect')
@@ -367,8 +401,12 @@ def check_set_winner():
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
         game_state["shouldswitchsides"] = False
-        game_state["initial_switch_done"] = False  # Reset for new set - IMPORTANT!
+        game_state["initial_switch_done"] = False  # Reset for new set
         print(f"→ Set won by BLACK. Score: {game_state['set1']}-{game_state['set2']}. Flag reset for new set.")
+        
+        # BASIC MODE: Trigger side switch immediately for new set
+        trigger_basic_mode_side_switch_if_needed()
+        
         return check_match_winner()
     
     if g2 >= 6 and g2 - g1 >= 2:
@@ -381,8 +419,12 @@ def check_set_winner():
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
         game_state["shouldswitchsides"] = False
-        game_state["initial_switch_done"] = False  # Reset for new set - IMPORTANT!
+        game_state["initial_switch_done"] = False  # Reset for new set
         print(f"→ Set won by YELLOW. Score: {game_state['set1']}-{game_state['set2']}. Flag reset for new set.")
+        
+        # BASIC MODE: Trigger side switch immediately for new set
+        trigger_basic_mode_side_switch_if_needed()
+        
         return check_match_winner()
     
     # Tie-break decision at 6-6 in games
@@ -542,10 +584,14 @@ def handle_tiebreak_win(team):
     game_state["game2"] = 0
     game_state["totalgamesinset"] = 0
     game_state["shouldswitchsides"] = False
-    game_state["initial_switch_done"] = False  # Reset for new set - IMPORTANT!
+    game_state["initial_switch_done"] = False  # Reset for new set
     reset_points()
     game_state["mode"] = "normal"
     print(f"→ Tie-break won. New set starting. Flag reset for new set.")
+    
+    # BASIC MODE: Trigger side switch immediately for new set
+    trigger_basic_mode_side_switch_if_needed()
+    
     check_match_winner()
 
 def handle_supertiebreak_win(team):
@@ -579,29 +625,6 @@ def process_add_point(team):
     if game_state["matchwon"]:
         return {"success": False, "error": "Match is already completed", 
                 "winner": game_state["winner"], "matchwon": True}
-    
-    # ========================================================================
-    # BASIC MODE: Trigger side switch BEFORE first point
-    # When sets are 0-0, 1-0, 0-1, or 1-1 (beginning of each set)
-    # ========================================================================
-    total_games = game_state["game1"] + game_state["game2"]
-    set1 = game_state["set1"]
-    set2 = game_state["set2"]
-    total_sets = set1 + set2
-    
-    if (game_state["gamemode"] == "basic" and 
-        total_games == 0 and  # Games must be 0-0 (start of set)
-        total_sets in [0, 1, 2] and  # Sets are 0-0, 1-0, 0-1, or 1-1
-        not game_state.get("initial_switch_done", False)):
-        
-        game_state["initial_switch_done"] = True
-        game_state["shouldswitchsides"] = True
-        game_state["totalgamesinset"] = 0
-        
-        # Broadcast the side switch immediately BEFORE processing point
-        broadcast_sideswitch()
-        print(f"→ BASIC MODE: Side switch at START of set (Sets {set1}-{set2}, Games 0-0)")
-    # ========================================================================
     
     score_before = (game_state["score1"], game_state["score2"])
     game_before = (game_state["game1"], game_state["game2"])
@@ -896,6 +919,11 @@ def reset_match():
     })
     
     broadcast_gamestate()
+    
+    # BASIC MODE: Trigger initial side switch if needed
+    if game_state["gamemode"] == "basic":
+        trigger_basic_mode_side_switch_if_needed()
+    
     return jsonify({"success": True, "message": "Match reset successfully", "gamestate": game_state})
 
 @app.route('/setgamemode', methods=['POST'])
@@ -913,6 +941,10 @@ def set_game_mode():
         game_state["initial_switch_done"] = False  # Reset flag when changing modes
         print(f"✓ Game mode set to: {mode.upper()}")
         broadcast_gamestate()
+        
+        # BASIC MODE: Trigger initial side switch if at match start
+        if mode == "basic":
+            trigger_basic_mode_side_switch_if_needed()
         
         return jsonify({"success": True, "message": f"Game mode set to {mode}", "gamemode": mode})
     except Exception as e:
@@ -953,7 +985,7 @@ if __name__ == '__main__':
     print("  • Expected response: <50ms")
     print("")
     print("GAME MODES:")
-    print("  • BASIC: Side switch at START of each set (0-0, 1-0, 0-1, 1-1)")
+    print("  • BASIC: Side switch IMMEDIATELY when new set starts (0-0, 1-0, 0-1, 1-1)")
     print("  • COMPETITION: Side switch after odd games (1, 3, 5, 7...)")
     print("  • LOCK: Same as competition (premium mode)")
     print("=" * 70)
