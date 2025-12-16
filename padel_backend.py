@@ -2,7 +2,7 @@
 """
 Padel Scoreboard Backend - OPTIMIZED FOR ULTRA-LOW LATENCY
 Real-time scoring with minimal delay
-WITH SIDE SWITCHING after odd-numbered games (COMPETITION/LOCK mode) or EVERY game (BASIC mode)
+WITH SIDE SWITCHING and GAME MODES (BASIC, COMPETITION, LOCK)
 
 Rules:
 - Normal games: first to 4 points (internal 0,1,2,3,...) with 2-point lead, displayed as 0, 15, 30, 40 (tennis style).
@@ -23,15 +23,22 @@ import time
 app = Flask(__name__)
 CORS(app, cors_allowed_origins="*")
 
+# Logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', 
-                    logger=False, engineio_logger=False, ping_timeout=60, ping_interval=25)
+# Socket.IO
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading',
+    logger=False,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25
+)
 
-# ============================================================================
-# SENSOR VALIDATION
-# ============================================================================
+# ===== SENSOR VALIDATION =====
 sensor_validation = {
     "validated": False,
     "sensor1_address": None,
@@ -48,7 +55,6 @@ def validate_sensors():
     try:
         bus = SMBus(1)
         detected_addresses = []
-        
         for addr in [0x29, 0x39]:
             try:
                 msg = i2c_msg.write(addr, [0x00])
@@ -57,9 +63,8 @@ def validate_sensors():
                 print(f"✓ Sensor found at 0x{addr:02X}")
             except:
                 pass
-        
         bus.close()
-        
+
         if len(detected_addresses) == 2 and 0x29 in detected_addresses and 0x39 in detected_addresses:
             sensor_validation["validated"] = True
             sensor_validation["sensor1_address"] = 0x39
@@ -72,29 +77,29 @@ def validate_sensors():
         elif len(detected_addresses) == 2 and detected_addresses[0] == detected_addresses[1]:
             sensor_validation["validated"] = False
             sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = "ERROR 1: Both sensors at same address (0x29) - Restart SUMMA"
+            sensor_validation["error_message"] = "ERROR #1: Both sensors at same address 0x29 - Restart SUMMA"
             sensor_validation["timestamp"] = datetime.now().isoformat()
             print("✗ Sensor validation FAILED - Both sensors at 0x29")
             return False
         elif len(detected_addresses) == 0:
             sensor_validation["validated"] = False
             sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = "ERROR 1: No sensors detected - Restart SUMMA"
+            sensor_validation["error_message"] = "ERROR #1: No sensors detected - Restart SUMMA"
             sensor_validation["timestamp"] = datetime.now().isoformat()
             print("✗ Sensor validation FAILED - No sensors detected")
             return False
         else:
             sensor_validation["validated"] = False
             sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = f"ERROR 1: Only {len(detected_addresses)} sensor(s) detected - Restart SUMMA"
+            sensor_validation["error_message"] = f"ERROR #1: Only {len(detected_addresses)} sensor(s) detected - Restart SUMMA"
             sensor_validation["timestamp"] = datetime.now().isoformat()
             print(f"✗ Sensor validation FAILED - Only {len(detected_addresses)} sensor(s)")
             return False
-            
+
     except Exception as e:
         sensor_validation["validated"] = False
         sensor_validation["status"] = "error"
-        sensor_validation["error_message"] = "ERROR 1: Sensor check failed - Restart SUMMA"
+        sensor_validation["error_message"] = "ERROR #1: Sensor check failed - Restart SUMMA"
         sensor_validation["timestamp"] = datetime.now().isoformat()
         print(f"✗ Sensor validation ERROR: {e}")
         return False
@@ -103,28 +108,36 @@ def run_initial_sensor_validation():
     time.sleep(2)
     validate_sensors()
     socketio.emit('sensor_validation_result', sensor_validation)
-    print(f"Sensor validation result broadcasted: {sensor_validation['status']}")
+    print(f"→ Sensor validation result broadcasted: {sensor_validation['status']}")
 
-# ============================================================================
-# GAME STATE
-# ============================================================================
+# ===== GAME STATE =====
 game_state = {
-    "game1": 0, "game2": 0,          # Games in current set
-    "set1": 0, "set2": 0,            # Sets in match
-    "point1": 0, "point2": 0,        # Internal points for current game/TB (0,1,2,...)
-    "score1": 0, "score2": 0,        # Display scores - In normal mode: 0,15,30,40
-                                     # - In tie-break modes: same as internal points (0,1,2,...)
+    # Scores
+    "game1": 0, "game2": 0,  # Games in current set
+    "set1": 0, "set2": 0,    # Sets in match
+    "point1": 0, "point2": 0,  # Internal points for current game/TB (0,1,2,...)
+    "score1": 0, "score2": 0,  # Display score - In tie-break modes: same as internal points (0,1,2,...)
+    
+    # Match status
     "matchwon": False,
-    "winner": None,                  # Match status
+    "winner": None,
+    
+    # History
     "sethistory": [],
-    "matchhistory": [],              # History
+    "matchhistory": [],
     "matchstarttime": datetime.now().isoformat(),
     "matchendtime": None,
     "lastupdated": datetime.now().isoformat(),
+    
+    # Side switching
     "shouldswitchsides": False,
-    "totalgamesinset": 0,            # Side switching
-    "mode": "normal",                # Mode: normal, tiebreak, supertiebreak
-    "gamemode": "competition"        # NEW: Game mode - basic, competition, lock
+    "totalgamesinset": 0,
+    
+    # Mode: "normal", "tiebreak", "supertiebreak"
+    "mode": "normal",
+    
+    # Game mode: "basic", "competition", "lock"
+    "gamemode": "competition"  # Default
 }
 
 match_storage = {
@@ -143,26 +156,23 @@ match_storage = {
     "displayshown": False
 }
 
-# ============================================================================
-# SIDE SWITCHING LOGIC (MODE-DEPENDENT)
-# ============================================================================
 def check_side_switch():
     """Check if side switch is needed based on game mode."""
     global game_state
     total_games = game_state["game1"] + game_state["game2"]
+    game_mode = game_state["gamemode"]
     
-    # Basic mode: switch after EVERY game
-    if game_state["gamemode"] == "basic":
-        if total_games >= 1:  # After any game
+    if game_mode == "basic":
+        # BASIC: Switch only after game 1
+        if total_games == 1:
             game_state["shouldswitchsides"] = True
             game_state["totalgamesinset"] = total_games
             return True
         else:
             game_state["shouldswitchsides"] = False
             return False
-    
-    # Competition/Lock mode: switch after ODD-numbered games (1, 3, 5, 7...)
-    else:  # competition or lock
+    else:
+        # COMPETITION and LOCK: Switch after every odd game (1, 3, 5, 7...)
         if (total_games % 2) == 1:
             game_state["shouldswitchsides"] = True
             game_state["totalgamesinset"] = total_games
@@ -172,17 +182,14 @@ def check_side_switch():
             return False
 
 def acknowledge_side_switch():
-    """Acknowledge side switch from client."""
     global game_state
     game_state["shouldswitchsides"] = False
 
-# ============================================================================
-# SOCKET.IO EVENTS
-# ============================================================================
+# ===== SOCKET.IO HANDLERS =====
 @socketio.on('connect')
 def handle_connect():
     print(f"✓ Client connected: {request.sid}")
-    emit('gamestate_update', game_state)
+    emit('gamestateupdate', game_state)
     emit('sensor_validation_result', sensor_validation)
     return True
 
@@ -192,7 +199,7 @@ def handle_disconnect():
 
 @socketio.on('request_gamestate')
 def handle_request_gamestate():
-    emit('gamestate_update', game_state)
+    emit('gamestateupdate', game_state)
 
 @socketio.on('request_sensor_validation')
 def handle_request_sensor_validation():
@@ -201,37 +208,23 @@ def handle_request_sensor_validation():
 @socketio.on('acknowledge_side_switch')
 def handle_acknowledge_side_switch():
     acknowledge_side_switch()
-    print("Side switch acknowledged by client")
+    print("✓ Side switch acknowledged by client")
     emit('side_switch_acknowledged', {"success": True})
 
-@socketio.on('set_game_mode')
-def handle_set_game_mode(data):
-    """Handle game mode selection from client."""
-    global game_state
-    mode = data.get('mode', 'competition')
-    
-    if mode in ['basic', 'competition', 'lock']:
-        game_state["gamemode"] = mode
-        print(f"✓ Game mode set to: {mode.upper()}")
-        emit('gamemode_confirmed', {"success": True, "mode": mode})
-        socketio.emit('gamestate_update', game_state, namespace='/')
-    else:
-        print(f"✗ Invalid game mode: {mode}")
-        emit('gamemode_confirmed', {"success": False, "error": "Invalid mode"})
-
+# ===== BROADCAST HELPERS =====
 def broadcast_gamestate():
-    socketio.emit('gamestate_update', game_state, namespace='/')
+    socketio.emit('gamestateupdate', game_state, namespace='/')
 
-def broadcast_point_scored(team, action_type):
+def broadcast_pointscored(team, actiontype):
     data = {
         "team": team,
-        "action": action_type,
+        "action": actiontype,
         "gamestate": game_state,
         "timestamp": datetime.now().isoformat()
     }
-    socketio.emit('point_scored', data, namespace='/')
+    socketio.emit('pointscored', data, namespace='/')
 
-def broadcast_side_switch():
+def broadcast_sideswitch():
     data = {
         "totalgames": game_state["totalgamesinset"],
         "gamescore": f"{game_state['game1']}-{game_state['game2']}",
@@ -239,41 +232,40 @@ def broadcast_side_switch():
         "message": "CHANGE SIDES",
         "timestamp": datetime.now().isoformat()
     }
-    socketio.emit('side_switch_required', data, namespace='/')
-    print(f"Side switch broadcasted: Total games={data['totalgames']}, Score={data['gamescore']}")
+    socketio.emit('sideswitchrequired', data, namespace='/')
+    print(f"→ Side switch broadcasted | Total games: {data['totalgames']}, Score: {data['gamescore']}")
 
-def broadcast_match_won():
+def broadcast_matchwon():
     data = {
         "winner": game_state["winner"],
         "matchdata": match_storage["matchdata"],
         "timestamp": datetime.now().isoformat()
     }
-    socketio.emit('match_won', data, namespace='/')
+    socketio.emit('matchwon', data, namespace='/')
 
-# ============================================================================
-# MATCH HISTORY AND STATISTICS
-# ============================================================================
-def add_to_history(action, team, score_before, score_after, game_before, game_after, set_before, set_after):
+# ===== HISTORY =====
+def add_to_history(action, team, scorebefore, scoreafter, gamebefore, gameafter, setbefore, setafter):
     global game_state
     history_entry = {
         "timestamp": datetime.now().isoformat(),
         "action": action,
         "team": team,
         "scores": {
-            "before": {"score1": score_before[0], "score2": score_before[1]},
-            "after": {"score1": score_after[0], "score2": score_after[1]}
+            "before": {"score1": scorebefore[0], "score2": scorebefore[1]},
+            "after": {"score1": scoreafter[0], "score2": scoreafter[1]}
         },
         "games": {
-            "before": {"game1": game_before[0], "game2": game_before[1]},
-            "after": {"game1": game_after[0], "game2": game_after[1]}
+            "before": {"game1": gamebefore[0], "game2": gamebefore[1]},
+            "after": {"game1": gameafter[0], "game2": gameafter[1]}
         },
         "sets": {
-            "before": {"set1": set_before[0], "set2": set_before[1]},
-            "after": {"set1": set_after[0], "set2": set_after[1]}
+            "before": {"set1": setbefore[0], "set2": setbefore[1]},
+            "after": {"set1": setafter[0], "set2": setafter[1]}
         }
     }
     game_state["matchhistory"].append(history_entry)
 
+# ===== MATCH STATISTICS =====
 def calculate_match_statistics():
     global game_state
     
@@ -286,7 +278,8 @@ def calculate_match_statistics():
     sets_breakdown = []
     for i, set_score in enumerate(game_state["sethistory"], 1):
         if "-" in set_score:
-            games = set_score.split("-")  # Handle both normal (6-4) and tie break (7-6(5)) formats
+            games = set_score.split("-")
+            # Extract just numbers (handle "7-6(5)" → "7" and "6")
             black_g = int(games[0].split("(")[0])
             yellow_g = int(games[1].split("(")[0])
             sets_breakdown.append({
@@ -357,9 +350,7 @@ def wipe_match_storage():
         "displayshown": False
     }
 
-# ============================================================================
-# GAME LOGIC
-# ============================================================================
+# ===== SET & MATCH LOGIC =====
 def check_set_winner():
     global game_state
     g1 = game_state["game1"]
@@ -372,8 +363,8 @@ def check_set_winner():
         set_before = (s1, s2)
         game_state["set1"] += 1
         game_state["sethistory"].append(f"{g1}-{g2}")
-        add_to_history("set", "black", (game_state["score1"], game_state["score2"]), (0, 0), 
-                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+        add_to_history("set", "black", (game_state["score1"], game_state["score2"]), 
+                      (0, 0), (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
         game_state["game1"] = 0
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
@@ -384,8 +375,8 @@ def check_set_winner():
         set_before = (s1, s2)
         game_state["set2"] += 1
         game_state["sethistory"].append(f"{g1}-{g2}")
-        add_to_history("set", "yellow", (game_state["score1"], game_state["score2"]), (0, 0), 
-                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+        add_to_history("set", "yellow", (game_state["score1"], game_state["score2"]), 
+                      (0, 0), (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
         game_state["game1"] = 0
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
@@ -394,15 +385,15 @@ def check_set_winner():
     
     # Tie-break decision at 6-6 in games
     if g1 == 6 and g2 == 6 and game_state["mode"] == "normal":
-        if (s1 == 0 and s2 == 0) or (abs(s1 - s2) == 1):
-            print("Entering NORMAL TIE BREAK mode")
+        if (s1 == 0 and s2 == 0) or (s1 != s2 == 1):
+            print("→ Entering NORMAL TIE BREAK mode")
             game_state["mode"] = "tiebreak"
             game_state["point1"] = 0
             game_state["point2"] = 0
             game_state["score1"] = 0
             game_state["score2"] = 0
         elif s1 == 1 and s2 == 1:
-            print("Entering SUPER TIE BREAK mode (decider)")
+            print("→ Entering SUPER TIE BREAK mode (decider)")
             game_state["mode"] = "supertiebreak"
             game_state["point1"] = 0
             game_state["point2"] = 0
@@ -438,9 +429,9 @@ def check_match_winner():
             "matchduration": calculate_match_duration()
         }
         add_to_history("match", "black", (game_state["score1"], game_state["score2"]), 
-                      (game_state["score1"], game_state["score2"]), 
+                      (game_state["score1"], game_state["score2"]),
                       (game_state["game1"], game_state["game2"]), 
-                      (game_state["game1"], game_state["game2"]), 
+                      (game_state["game1"], game_state["game2"]),
                       (game_state["set1"], game_state["set2"]), 
                       (game_state["set1"], game_state["set2"]))
         store_match_data()
@@ -470,9 +461,9 @@ def check_match_winner():
             "matchduration": calculate_match_duration()
         }
         add_to_history("match", "yellow", (game_state["score1"], game_state["score2"]), 
-                      (game_state["score1"], game_state["score2"]), 
+                      (game_state["score1"], game_state["score2"]),
                       (game_state["game1"], game_state["game2"]), 
-                      (game_state["game1"], game_state["game2"]), 
+                      (game_state["game1"], game_state["game2"]),
                       (game_state["set1"], game_state["set2"]), 
                       (game_state["set1"], game_state["set2"]))
         store_match_data()
@@ -489,9 +480,12 @@ def calculate_match_duration():
         return f"{total_minutes} minutes"
     return "In progress"
 
+# ===== SCORING LOGIC =====
 def set_normal_score_from_points():
-    """Map internal raw points (0,1,2,3,...) to tennis-style display (0,15,30,40).
-    Anything >= 3 is displayed as 40 (we use win-by-2 rule on raw points)."""
+    """
+    Map internal raw points (0,1,2,3,...) to tennis-style display (0,15,30,40).
+    Anything >= 3 is displayed as 40 (we use win-by-2 rule on raw points).
+    """
     p1 = game_state["point1"]
     p2 = game_state["point2"]
     
@@ -534,13 +528,13 @@ def handle_tiebreak_win(team):
         game_state["set1"] += 1
         # Winner gets 7, loser stays at 6, show TB score in parens
         game_state["sethistory"].append(f"7-6{tb_score}")
-        add_to_history("set", "black", (game_state["score1"], game_state["score2"]), (0, 0), 
-                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+        add_to_history("set", "black", (game_state["score1"], game_state["score2"]), 
+                      (0, 0), (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
     else:
         game_state["set2"] += 1
         game_state["sethistory"].append(f"6-7{tb_score}")
-        add_to_history("set", "yellow", (game_state["score1"], game_state["score2"]), (0, 0), 
-                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+        add_to_history("set", "yellow", (game_state["score1"], game_state["score2"]), 
+                      (0, 0), (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
     
     game_state["game1"] = 0
     game_state["game2"] = 0
@@ -553,19 +547,20 @@ def handle_tiebreak_win(team):
 def handle_supertiebreak_win(team):
     """Super tie break win - store as special set and end match"""
     stb_score = f"(STB:{game_state['point1']}-{game_state['point2']})"
+    
     set_before = (game_state["set1"], game_state["set2"])
     
     if team == "black":
         game_state["set1"] += 1
         game_state["sethistory"].append(f"10-{game_state['point2']}(STB)")
-        add_to_history("set", "black", (game_state["score1"], game_state["score2"]), (0, 0), 
-                      (game_state["game1"], game_state["game2"]), (0, 0), 
+        add_to_history("set", "black", (game_state["score1"], game_state["score2"]), 
+                      (0, 0), (game_state["game1"], game_state["game2"]), (0, 0), 
                       set_before, (game_state["set1"], game_state["set2"]))
     else:
         game_state["set2"] += 1
         game_state["sethistory"].append(f"{game_state['point1']}-10(STB)")
-        add_to_history("set", "yellow", (game_state["score1"], game_state["score2"]), (0, 0), 
-                      (game_state["game1"], game_state["game2"]), (0, 0), 
+        add_to_history("set", "yellow", (game_state["score1"], game_state["score2"]), 
+                      (0, 0), (game_state["game1"], game_state["game2"]), (0, 0), 
                       set_before, (game_state["set1"], game_state["set2"]))
     
     reset_points()
@@ -576,7 +571,8 @@ def process_add_point(team):
     global game_state
     
     if game_state["matchwon"]:
-        return {"success": False, "error": "Match is already completed", "winner": game_state["winner"], "matchwon": True}
+        return {"success": False, "error": "Match is already completed", 
+                "winner": game_state["winner"], "matchwon": True}
     
     score_before = (game_state["score1"], game_state["score2"])
     game_before = (game_state["game1"], game_state["game2"])
@@ -596,9 +592,8 @@ def process_add_point(team):
     p2 = game_state["point2"]
     
     if mode == "normal":
-        # NORMAL GAMES: win when raw >= 4 and lead >= 2 (display 0/15/30/40)
         set_normal_score_from_points()
-        
+        # NORMAL GAMES: win when raw >= 4 and lead >= 2 (display 0/15/30/40)
         if team == "black":
             if p1 >= 4 and p1 - p2 >= 2:
                 handle_normal_game_win("black")
@@ -614,7 +609,6 @@ def process_add_point(team):
         # NORMAL TIE BREAK: internal points display directly (0,1,2,...)
         game_state["score1"] = game_state["point1"]
         game_state["score2"] = game_state["point2"]
-        
         if team == "black":
             if p1 >= 7 and p1 - p2 >= 2:
                 handle_tiebreak_win("black")
@@ -628,7 +622,6 @@ def process_add_point(team):
         # SUPER TIE BREAK
         game_state["score1"] = game_state["point1"]
         game_state["score2"] = game_state["point2"]
-        
         if team == "black":
             if p1 >= 10 and p1 - p2 >= 2:
                 handle_supertiebreak_win("black")
@@ -640,8 +633,9 @@ def process_add_point(team):
     
     # History
     if not game_state["matchwon"]:
-        add_to_history(action_type, team, score_before, (game_state["score1"], game_state["score2"]), 
-                      game_before, (game_state["game1"], game_state["game2"]), 
+        add_to_history(action_type, team, score_before, 
+                      (game_state["score1"], game_state["score2"]),
+                      game_before, (game_state["game1"], game_state["game2"]),
                       set_before, (game_state["set1"], game_state["set2"]))
     
     game_state["lastupdated"] = datetime.now().isoformat()
@@ -652,14 +646,14 @@ def process_add_point(team):
         side_switch_needed = check_side_switch()
     
     if side_switch_needed:
-        broadcast_side_switch()
+        broadcast_sideswitch()
     
     broadcast_gamestate()
     
     if game_state["matchwon"]:
-        broadcast_match_won()
+        broadcast_matchwon()
     else:
-        broadcast_point_scored(team, action_type)
+        broadcast_pointscored(team, action_type)
     
     response = {
         "success": True,
@@ -681,9 +675,11 @@ def process_add_point(team):
     return response
 
 def process_subtract_point(team):
-    """Simple subtraction:
-    - Decrement raw internal point, update displayed score accordingly.
-    - Does not undo games/sets."""
+    """
+    Simple subtraction:
+    - Decrement raw internal point & update displayed score accordingly.
+    - Does not undo games/sets.
+    """
     global game_state
     
     if game_state["matchwon"]:
@@ -705,8 +701,9 @@ def process_subtract_point(team):
         game_state["score1"] = game_state["point1"]
         game_state["score2"] = game_state["point2"]
     
-    add_to_history("point_subtract", team, score_before, (game_state["score1"], game_state["score2"]), 
-                  game_before, (game_state["game1"], game_state["game2"]), 
+    add_to_history("point_subtract", team, score_before, 
+                  (game_state["score1"], game_state["score2"]),
+                  game_before, (game_state["game1"], game_state["game2"]),
                   set_before, (game_state["set1"], game_state["set2"]))
     
     game_state["lastupdated"] = datetime.now().isoformat()
@@ -714,9 +711,7 @@ def process_subtract_point(team):
     
     return {"success": True, "message": f"Point subtracted from team {team}", "gamestate": game_state}
 
-# ============================================================================
-# HTTP ROUTES
-# ============================================================================
+# ===== FLASK ROUTES =====
 @app.route('/')
 def serve_scoreboard():
     return send_from_directory('.', 'padel_scoreboard.html')
@@ -731,9 +726,8 @@ def serve_static_files(filename):
 def add_point():
     try:
         data = request.get_json()
-        team = data.get('team', 'black')
+        team = data.get("team", "black")
         result = process_add_point(team)
-        
         if result["success"]:
             return jsonify(result)
         else:
@@ -745,9 +739,8 @@ def add_point():
 def subtract_point():
     try:
         data = request.get_json()
-        team = data.get('team', 'black')
+        team = data.get("team", "black")
         result = process_subtract_point(team)
-        
         if result["success"]:
             return jsonify(result)
         else:
@@ -761,30 +754,29 @@ def get_gamestate():
     response_data["matchstorageavailable"] = match_storage["matchcompleted"] and not match_storage["displayshown"]
     return jsonify(response_data)
 
-@app.route('/sensorvalidation', methods=['GET'])
+@app.route('/sensor_validation', methods=['GET'])
 def get_sensor_validation():
     return jsonify(sensor_validation)
 
-@app.route('/getmatchdata', methods=['GET'])
+@app.route('/get_match_data', methods=['GET'])
 def get_match_data():
     global match_storage
     if not match_storage["matchcompleted"]:
         return jsonify({"success": False, "error": "No completed match data"}), 404
-    
     return jsonify({
         "success": True,
         "matchdata": match_storage["matchdata"],
         "displayshown": match_storage["displayshown"]
     })
 
-@app.route('/markmatchdisplayed', methods=['POST'])
+@app.route('/mark_match_displayed', methods=['POST'])
 def mark_match_displayed():
     global match_storage
     if not match_storage["matchcompleted"]:
         return jsonify({"success": False, "error": "No match data"}), 400
     
     match_storage["displayshown"] = True
-    wipe_immediately = request.get_json().get('wipeimmediately', True) if request.get_json() else True
+    wipe_immediately = request.get_json().get("wipe_immediately", True) if request.get_json() else True
     
     if wipe_immediately:
         wipe_match_storage()
@@ -794,7 +786,7 @@ def mark_match_displayed():
     
     return jsonify({"success": True, "message": message})
 
-@app.route('/matchhistory', methods=['GET'])
+@app.route('/match_history', methods=['GET'])
 def get_match_history():
     global game_state
     
@@ -815,7 +807,7 @@ def get_match_history():
     }
     
     statistics = {
-        "blackteamstats": {
+        "blackteam_stats": {
             "pointswon": black_points,
             "gameswon": black_games,
             "setswon": black_sets,
@@ -823,7 +815,7 @@ def get_match_history():
             "currentgames": game_state["game1"],
             "currentsets": game_state["set1"]
         },
-        "yellowteamstats": {
+        "yellowteam_stats": {
             "pointswon": yellow_points,
             "gameswon": yellow_games,
             "setswon": yellow_sets,
@@ -855,7 +847,6 @@ def reset_match():
     global game_state, match_storage
     
     wipe_match_storage()
-    
     game_state.update({
         "game1": 0, "game2": 0,
         "set1": 0, "set2": 0,
@@ -871,12 +862,30 @@ def reset_match():
         "shouldswitchsides": False,
         "totalgamesinset": 0,
         "mode": "normal"
-        # Keep gamemode - do not reset it
+        # "gamemode" is NOT reset - it persists between matches
     })
     
     broadcast_gamestate()
-    
     return jsonify({"success": True, "message": "Match reset successfully", "gamestate": game_state})
+
+@app.route('/setgamemode', methods=['POST'])
+def set_game_mode():
+    """Set game mode: basic, competition, or lock"""
+    global game_state
+    try:
+        data = request.get_json()
+        mode = data.get("mode", "competition")
+        
+        if mode not in ["basic", "competition", "lock"]:
+            return jsonify({"success": False, "error": "Invalid mode. Must be basic, competition, or lock"}), 400
+        
+        game_state["gamemode"] = mode
+        print(f"✓ Game mode set to: {mode.upper()}")
+        broadcast_gamestate()
+        
+        return jsonify({"success": True, "message": f"Game mode set to {mode}", "gamemode": mode})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -901,22 +910,21 @@ def health_check():
         }
     })
 
-# ============================================================================
-# MAIN
-# ============================================================================
+# ===== MAIN =====
 if __name__ == '__main__':
     print("=" * 70)
-    print("Padel Scoreboard Backend - OPTIMIZED with Multiple Game Modes")
+    print("Padel Scoreboard Backend - OPTIMIZED with Game Modes")
     print("=" * 70)
     print("OPTIMIZATIONS:")
-    print("  - Logging: MINIMAL (errors only)")
-    print("  - SocketIO: Immediate broadcast")
-    print("  - HTTP: Fast JSON processing")
-    print("  - Expected response: <50ms")
-    print("\nGAME MODES:")
-    print("  - BASIC: Swap sides after EVERY game")
-    print("  - COMPETITION: Swap after odd games (1, 3, 5, 7...)")
-    print("  - LOCK: Same as Competition (locked mode)")
+    print("  • Logging: MINIMAL (errors only)")
+    print("  • SocketIO: Immediate broadcast")
+    print("  • HTTP: Fast JSON processing")
+    print("  • Expected response: <50ms")
+    print("")
+    print("GAME MODES:")
+    print("  • BASIC: Side switch only after game 1")
+    print("  • COMPETITION: Side switch after odd games (1, 3, 5, 7...)")
+    print("  • LOCK: Same as competition (premium mode)")
     print("=" * 70)
     print("Socket.IO enabled for real-time updates")
     print("Access at: http://127.0.0.1:5000")
