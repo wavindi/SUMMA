@@ -84,11 +84,17 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupSplashScreen() {
     const splashScreen = document.getElementById('splashScreen');
     
-    // Dismiss splash on any click/touch
+    // Dismiss splash and show mode selection
     const dismissSplash = () => {
         if (!splashDismissed) {
             splashDismissed = true;
             splashScreen.classList.remove('active');
+            
+            // Show mode selection after splash
+            setTimeout(() => {
+                showModeSelection();
+            }, 500);
+            
             console.log('✨ Splash screen dismissed');
         }
     };
@@ -102,6 +108,34 @@ function setupSplashScreen() {
             dismissSplash();
         }
     }, 5000);
+}
+
+// =================================================================================================
+// MODE SELECTION SCREEN
+// =================================================================================================
+
+function showModeSelection() {
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen) {
+        modeScreen.classList.add('active');
+        console.log('🎮 Mode selection screen shown');
+    }
+}
+
+function selectMode(mode) {
+    console.log(`🎯 Mode selected: ${mode}`);
+    
+    // Hide mode selection screen
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen) {
+        modeScreen.classList.remove('active');
+        setTimeout(() => {
+            modeScreen.style.display = 'none';
+        }, 500);
+    }
+    
+    // Show scoreboard (it's already visible in the background)
+    console.log('📊 Scoreboard ready');
 }
 
 // =================================================================================================
