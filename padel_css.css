@@ -422,6 +422,7 @@ body {
     z-index: 10000;
     animation: winnerAppear 1s ease-out;
     overflow: hidden;
+    cursor: pointer;
 }
 
 @keyframes winnerAppear {
@@ -613,19 +614,19 @@ body {
     color: #d4af37; 
 }
 
-/* Winner Actions - Bigger Buttons */
+/* Winner Actions - Single Button Centered */
 .winner-actions {
     display: flex;
-    gap: 40px;
+    justify-content: center;
     margin-top: 20px;
 }
 
 .action-button {
-    padding: 20px 50px;
+    padding: 20px 60px;
     border: none;
     border-radius: 25px;
     font-family: 'Anton', Arial, sans-serif;
-    font-size: 24px;
+    font-size: 28px;
     font-style: italic;
     cursor: pointer;
     transition: all 0.4s ease;
@@ -642,19 +643,6 @@ body {
 .new-match-btn:hover {
     transform: scale(1.1) translateY(-5px);
     box-shadow: 0 15px 40px rgba(212, 175, 55, 0.7);
-}
-
-.share-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
-    border: 3px solid rgba(212, 175, 55, 0.8);
-    color: #d4af37;
-    backdrop-filter: blur(10px);
-}
-
-.share-btn:hover {
-    transform: scale(1.1) translateY(-5px);
-    border-color: rgba(212, 175, 55, 1);
-    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.6);
 }
 
 .action-button:active {
@@ -1155,14 +1143,12 @@ body {
     .sets-table td.winner-set { font-size: 24px; }
     
     .winner-actions {
-        flex-direction: column;
-        gap: 20px;
         width: 100%;
     }
     
     .action-button {
-        padding: 18px 40px;
-        font-size: 20px;
+        padding: 18px 50px;
+        font-size: 24px;
         width: 100%;
     }
 }
