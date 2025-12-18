@@ -173,49 +173,50 @@
     </div>
 
     <!-- ================================================================================================= -->
-    <!-- WINNER DISPLAY -->
-    <!-- ================================================================================================= -->
-    <div id="winnerDisplay" class="winner-display">
-        <div class="winner-header">
-            <div class="winner-trophy">🏆</div>
-            <h1 class="winner-title">MATCH WINNER</h1>
-            <h2 class="winner-team-name" id="winnerTeamName">BLACK TEAM</h2>
-        </div>
+<!-- WINNER DISPLAY - FULL SCREEN -->
+<!-- ================================================================================================= -->
+<div id="winnerDisplay" class="winner-display">
+    <div class="winner-header">
+        <div class="winner-trophy">🏆</div>
+        <h1 class="winner-title">MATCH WINNER</h1>
+        <h2 class="winner-team-name" id="winnerTeamName">BLACK TEAM</h2>
+    </div>
 
-        <div class="match-summary">
-            <div class="summary-item">
-                <span class="summary-label">Final Sets</span>
-                <span class="summary-value" id="finalSetsScore">2-0</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Duration</span>
-                <span class="summary-value" id="matchDuration">45 min</span>
-            </div>
+    <div class="match-summary">
+        <div class="summary-item">
+            <span class="summary-label">Final Sets</span>
+            <span class="summary-value" id="finalSetsScore">2-0</span>
         </div>
-
-        <div class="sets-table-section">
-            <div class="table-container">
-                <h3 class="table-title">SETS BREAKDOWN</h3>
-                <table class="sets-table">
-                    <thead>
-                        <tr>
-                            <th>Set</th>
-                            <th>Black</th>
-                            <th>Yellow</th>
-                            <th>Winner</th>
-                        </tr>
-                    </thead>
-                    <tbody id="setsTableBody">
-                        <!-- Populated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="winner-actions">
-            <button class="action-button new-match-btn" onclick="newMatch()">NEW MATCH</button>
+        <div class="summary-item">
+            <span class="summary-label">Duration</span>
+            <span class="summary-value" id="matchDuration">45 min</span>
         </div>
     </div>
+
+    <div class="sets-table-section">
+        <div class="table-container">
+            <h3 class="table-title">SETS BREAKDOWN</h3>
+            <table class="sets-table">
+                <thead>
+                    <tr>
+                        <th>Set</th>
+                        <th>Black</th>
+                        <th>Yellow</th>
+                        <th>Winner</th>
+                    </tr>
+                </thead>
+                <tbody id="setsTableBody">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="winner-actions">
+        <button class="action-button new-match-btn" onclick="newMatch()">NEW MATCH</button>
+    </div>
+</div>
+
 
     <!-- ================================================================================================= -->
     <!-- CONTROL PANEL -->
