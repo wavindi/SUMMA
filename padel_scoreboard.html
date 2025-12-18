@@ -8,21 +8,16 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <!-- SPLASH SCREEN -->
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <div id="splashScreen" class="splash-screen active">
-        <div class="splash-content">
-            <img src="summa.png" alt="SUMMA" class="splash-logo">
-            <div class="splash-text">SUMMA</div>
-            <div class="splash-subtitle">Tap anywhere to start</div>
-            <div class="splash-loader"></div>
-        </div>
+        <img src="splash.gif" alt="SUMMA" class="splash-gif">
     </div>
 
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <!-- GAME MODE SELECTION SCREEN -->
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <div id="modeSelectionScreen" class="mode-selection-screen">
         <div class="mode-header">
             <div class="mode-title">GAME MODE</div>
@@ -61,7 +56,7 @@
                 </div>
                 <div class="mode-name">BASIC</div>
                 <div class="mode-description">
-                    <span class="mode-desc-line"><span class="highlight-gold">SIDE SWITCH:</span> Only after <span class="highlight-gold">GAME 1</span></span>
+                    <span class="mode-desc-line"><span class="highlight-gold">SIDE SWITCH</span> Only after <span class="highlight-gold">GAME 1</span></span>
                     <span class="mode-desc-line">Simple mode for casual play</span>
                     <span class="mode-desc-line">Perfect for beginners</span>
                 </div>
@@ -86,8 +81,8 @@
                 </div>
                 <div class="mode-name">COMPETITION</div>
                 <div class="mode-description">
-                    <span class="mode-desc-line"><span class="highlight-gold">SIDE SWITCH:</span> After <span class="highlight-gold">ODD GAMES</span></span>
-                    <span class="mode-desc-line">(1, 3, 5, 7, ...)</span>
+                    <span class="mode-desc-line"><span class="highlight-gold">SIDE SWITCH</span> After <span class="highlight-gold">ODD GAMES</span></span>
+                    <span class="mode-desc-line">1, 3, 5, 7, ...</span>
                     <span class="mode-desc-line">Official padel rules</span>
                 </div>
             </div>
@@ -137,8 +132,7 @@
                         <!-- Lock body -->
                         <rect x="12" y="25" width="26" height="28" rx="3" fill="#000"/>
                         <!-- Shackle -->
-                        <path d="M 18 25 L 18 15 Q 18 8 25 8 Q 32 8 32 15 L 32 25" 
-                              fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 18 25 L 18 15 Q 18 8 25 8 Q 32 8 32 15 L 32 25" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
                         <!-- Keyhole -->
                         <circle cx="25" cy="37" r="3" fill="#d4af37"/>
                         <rect x="23.5" y="37" width="3" height="8" fill="#d4af37"/>
@@ -148,14 +142,14 @@
         </div>
     </div>
 
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <!-- TOAST CONTAINER -->
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <!-- MAIN SCOREBOARD -->
-    <!-- ======================================================== -->
+    <!-- ========================================= -->
     <div class="scoreboard">
         <!-- Header -->
         <div class="header">
@@ -219,7 +213,7 @@
             <div class="sets-label">SETS</div>
             <div class="sets-scores">
                 <div class="sets-score-number" id="setsBlack">0</div>
-                <div style="color: #d4af37; font-size: 40px;">—</div>
+                <div style="color: #d4af37; font-size: 40px;">:</div>
                 <div class="sets-score-number" id="setsYellow">0</div>
             </div>
         </div>
@@ -231,7 +225,7 @@
                 <div class="winner-title">MATCH WINNER</div>
                 <div class="winner-team-name" id="winnerTeamName">BLACK TEAM</div>
             </div>
-            
+
             <div class="match-summary">
                 <div class="summary-item">
                     <div class="summary-label">Final Sets</div>
