@@ -118,6 +118,9 @@ function dismissSplash() {
 function showModeSelection() {
     const modeScreen = document.getElementById('modeSelectionScreen');
     if (modeScreen) {
+        modeScreen.style.display = 'flex';
+        // Force reflow
+        modeScreen.offsetHeight;
         modeScreen.classList.add('active');
         console.log('🎮 Mode selection screen shown');
     }
@@ -190,17 +193,17 @@ function clearWinnerTimeout() {
 }
 
 async function resetMatchAndGoToSplash() {
-    console.log('🔄 Resetting match and going to splash...');
+    console.log('🔄 Resetting match, mode, and going to splash...');
     
-    // Reset match on backend
+    // 1. Reset match on backend
     try {
-        const response = await fetch(`${API_BASE}/resetmatch`, {
+        const resetResponse = await fetch(`${API_BASE}/resetmatch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
 
-        const data = await response.json();
-        if (data.success) {
+        const resetData = await resetResponse.json();
+        if (resetData.success) {
             console.log('✅ Match reset successfully on backend');
         } else {
             console.error('❌ Failed to reset match on backend');
@@ -209,7 +212,25 @@ async function resetMatchAndGoToSplash() {
         console.error('❌ Error resetting match:', error);
     }
     
-    // Reset local variables
+    // 2. Reset game mode on backend (set to null or empty)
+    try {
+        const modeResponse = await fetch(`${API_BASE}/setgamemode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: null })
+        });
+
+        const modeData = await modeResponse.json();
+        if (modeData.success) {
+            console.log('✅ Game mode reset successfully on backend');
+        } else {
+            console.error('❌ Failed to reset game mode on backend');
+        }
+    } catch (error) {
+        console.error('❌ Error resetting game mode:', error);
+    }
+    
+    // 3. Reset local variables
     score1 = 0;
     score2 = 0;
     games1 = 0;
@@ -221,23 +242,30 @@ async function resetMatchAndGoToSplash() {
     setsHistory = [];
     matchStartTime = Date.now();
     
-    // Hide winner display
+    // 4. Hide winner display
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
         winnerDisplay.style.display = 'none';
     }
     
-    // Update scoreboard display
+    // 5. Hide mode selection if visible
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen) {
+        modeScreen.classList.remove('active');
+        modeScreen.style.display = 'none';
+    }
+    
+    // 6. Update scoreboard display
     updateDisplay();
     
-    // Reset splash dismissed flag
+    // 7. Reset splash dismissed flag
     splashDismissed = false;
     
-    // Show splash screen
+    // 8. Show splash screen
     const splashScreen = document.getElementById('splashScreen');
     if (splashScreen) {
         splashScreen.classList.add('active');
-        console.log('🎬 Match reset complete - splash screen displayed');
+        console.log('🎬 Match and mode reset complete - splash screen displayed');
     }
 }
 
@@ -327,6 +355,7 @@ function setupClickableTeams() {
             const splashScreen = document.getElementById('splashScreen');
             if (splashScreen && splashScreen.classList.contains('active')) {
                 dismissSplash();
+                return;
             }
             
             console.log('⚫ Black team clicked');
@@ -353,6 +382,7 @@ function setupClickableTeams() {
             const splashScreen = document.getElementById('splashScreen');
             if (splashScreen && splashScreen.classList.contains('active')) {
                 dismissSplash();
+                return;
             }
             
             console.log('🟡 Yellow team clicked');
@@ -604,13 +634,13 @@ function displayWinnerWithData(matchData) {
 // MATCH RESET
 // =================================================================================================
 async function resetMatch() {
-    console.log('🔄 Reset button clicked - resetting match and going to splash...');
+    console.log('🔄 Reset button clicked - resetting match, mode, and going to splash...');
     await resetMatchAndGoToSplash();
 }
 
 // Update newMatch function to also reset and go to splash
 async function newMatch() {
-    console.log('🆕 New match button clicked - resetting match and going to splash...');
+    console.log('🆕 New match button clicked - resetting match, mode, and going to splash...');
     await resetMatchAndGoToSplash();
 }
 
