@@ -789,7 +789,7 @@ body {
 }
 
 /* ============================================================================
-   MODE SELECTION SCREEN - ORIGINAL DESIGN
+   MODE SELECTION SCREEN - EXACT DESIGN FROM IMAGE
    ============================================================================ */
 
 .mode-selection-screen {
@@ -809,7 +809,8 @@ body {
     z-index: 9999;
     opacity: 0;
     transition: opacity 0.5s ease;
-    padding: 40px;
+    padding: 60px 40px;
+    position: relative;
 }
 
 .mode-selection-screen::before {
@@ -819,7 +820,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(40, 50, 60, 0.95) 0%, rgba(30, 40, 50, 0.95) 100%);
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .mode-selection-screen.active {
@@ -827,49 +828,55 @@ body {
     opacity: 1;
 }
 
+/* Altus Logo Top Right */
+.mode-logo-top {
+    position: absolute;
+    top: 40px;
+    right: 50px;
+    z-index: 2;
+}
+
+.altus-logo {
+    width: 150px;
+    height: auto;
+    filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.7));
+}
+
+/* Header */
 .mode-header {
     position: relative;
     z-index: 1;
     text-align: center;
-    margin-bottom: 60px;
+    margin-bottom: 80px;
 }
 
 .mode-title {
     color: #d4af37;
-    font-size: 80px;
+    font-size: clamp(60px, 8vw, 100px);
     font-weight: 400;
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 8px;
     line-height: 1;
     text-shadow:
-        0 0 30px rgba(212, 175, 55, 0.8),
-        0 4px 20px rgba(0, 0, 0, 0.8);
+        0 0 40px rgba(212, 175, 55, 0.9),
+        0 6px 20px rgba(0, 0, 0, 0.9);
+    margin-bottom: 10px;
 }
 
 .mode-subtitle {
     color: #fff;
-    font-size: 48px;
+    font-size: clamp(40px, 6vw, 70px);
     font-weight: 400;
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 6px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    text-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.7);
 }
 
-.mode-logo-top {
-    position: absolute;
-    top: 30px;
-    right: 40px;
-    z-index: 2;
-}
-
-.altus-logo {
-    width: 120px;
-    height: auto;
-    filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.5));
-}
-
+/* Mode Cards Container */
 .mode-cards-container {
     display: flex;
     gap: 40px;
@@ -877,54 +884,59 @@ body {
     align-items: stretch;
     position: relative;
     z-index: 1;
-    max-width: 1400px;
+    max-width: 1600px;
     width: 100%;
 }
 
+/* Mode Cards */
 .mode-card {
     flex: 1;
-    max-width: 450px;
-    min-height: 520px;
-    border-radius: 30px;
-    padding: 50px 40px;
+    max-width: 480px;
+    min-height: 600px;
+    border-radius: 40px;
+    padding: 60px 45px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     cursor: pointer;
     transition: all 0.4s ease;
     position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
 }
 
 .mode-card:hover {
-    transform: translateY(-10px) scale(1.03);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    transform: translateY(-15px) scale(1.05);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
 }
 
 .mode-card:active {
-    transform: translateY(-5px) scale(1.01);
+    transform: translateY(-10px) scale(1.02);
 }
 
+/* Gold Cards - Basic and Competition */
 .mode-basic,
 .mode-competition {
     background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
 }
 
+/* Gray Locked Card - Tournament */
 .mode-tournament {
-    background: linear-gradient(135deg, #888 0%, #666 100%);
+    background: linear-gradient(135deg, #999 0%, #777 100%);
     cursor: not-allowed;
+    opacity: 0.95;
 }
 
 .mode-tournament:hover {
     transform: none;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
 }
 
 /* Mode Icons */
 .mode-icon {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 30px;
+    width: 140px;
+    height: 140px;
+    margin-bottom: 40px;
     color: #000;
     display: flex;
     align-items: center;
@@ -936,231 +948,208 @@ body {
     height: 100%;
 }
 
-.mode-tournament .mode-icon {
-    color: #000;
-}
-
 .padel-racket-icon {
-    width: 90px;
-    height: 120px;
+    width: 100px;
+    height: 130px;
 }
 
 .trophy-icon {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
 }
 
 .podium-icon {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
 }
 
-/* Mode Titles - WHITE */
+/* Mode Titles - WHITE and BOLD */
 .mode-name {
     color: #fff;
-    font-size: 48px;
-    font-weight: 400;
+    font-size: clamp(42px, 5vw, 60px);
+    font-weight: 700;
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 3px;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-align: center;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
-.mode-tournament .mode-name {
-    color: #fff;
-}
-
-/* Mode Description Text - BLACK */
+/* Mode Description Text - BLACK and BOLD */
 .mode-description {
     color: #000;
-    font-size: 20px;
-    font-weight: 400;
+    font-size: clamp(18px, 2.2vw, 24px);
+    font-weight: 700;
     font-style: italic;
     text-align: center;
-    line-height: 1.6;
+    line-height: 1.5;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
 }
 
 .mode-desc-line {
     display: block;
 }
 
+/* Gold highlighted text in descriptions */
 .highlight-gold {
-    color: #000;
-    font-weight: 700;
-    text-transform: uppercase;
+    color: #8b6914;
+    font-weight: 900;
 }
 
 /* Locked Mode Text */
 .mode-locked-text {
     color: #000;
-    font-size: 18px;
+    font-size: clamp(16px, 2vw, 22px);
+    font-weight: 700;
 }
 
 .locked-title {
-    color: #fff;
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-}
-
-.highlight-white {
     color: #000;
-    font-weight: 400;
+    font-size: clamp(20px, 2.5vw, 28px);
+    font-weight: 900;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    display: block;
 }
 
 /* Lock Icon */
 .lock-icon {
     position: absolute;
-    bottom: 30px;
-    right: 30px;
+    bottom: 40px;
+    right: 40px;
     color: #000;
-    opacity: 0.95;
+    opacity: 0.9;
 }
 
-/* Responsive Mode Selection */
+.lock-icon svg {
+    width: 70px;
+    height: 70px;
+}
+
+/* Responsive Design */
 @media (max-width: 1400px) {
     .mode-cards-container {
         gap: 30px;
     }
 
     .mode-card {
-        max-width: 380px;
-        min-height: 480px;
-        padding: 40px 30px;
+        max-width: 420px;
+        min-height: 550px;
+        padding: 50px 40px;
     }
 
-    .mode-title {
-        font-size: 64px;
-    }
-
-    .mode-subtitle {
-        font-size: 40px;
+    .mode-icon {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 35px;
     }
 
     .mode-name {
-        font-size: 40px;
-    }
-
-    .mode-description {
-        font-size: 18px;
+        margin-bottom: 35px;
     }
 }
 
 @media (max-width: 1200px) {
+    .mode-selection-screen {
+        padding: 40px 30px;
+    }
+
+    .mode-header {
+        margin-bottom: 60px;
+    }
+
     .mode-cards-container {
         flex-direction: column;
-        gap: 25px;
-        max-width: 500px;
+        gap: 30px;
+        max-width: 550px;
     }
 
     .mode-card {
         max-width: 100%;
         min-height: auto;
-        padding: 35px 30px;
-    }
-
-    .mode-header {
-        margin-bottom: 40px;
-    }
-
-    .mode-title {
-        font-size: 56px;
-    }
-
-    .mode-subtitle {
-        font-size: 32px;
+        padding: 45px 40px;
     }
 
     .mode-icon {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 20px;
+        width: 110px;
+        height: 110px;
+        margin-bottom: 30px;
     }
 
     .mode-name {
-        font-size: 36px;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
     }
 
-    .mode-description {
-        font-size: 16px;
+    .mode-logo-top {
+        top: 25px;
+        right: 30px;
     }
 
     .altus-logo {
-        width: 100px;
+        width: 120px;
     }
 }
 
 @media (max-width: 800px) {
     .mode-selection-screen {
-        padding: 20px;
+        padding: 30px 20px;
     }
 
     .mode-header {
-        margin-bottom: 30px;
-    }
-
-    .mode-title {
-        font-size: 42px;
-        letter-spacing: 4px;
-    }
-
-    .mode-subtitle {
-        font-size: 24px;
+        margin-bottom: 50px;
     }
 
     .mode-logo-top {
-        top: 15px;
-        right: 15px;
+        top: 20px;
+        right: 20px;
     }
 
     .altus-logo {
-        width: 80px;
+        width: 100px;
     }
 
     .mode-card {
-        padding: 30px 25px;
+        padding: 40px 35px;
+        border-radius: 30px;
     }
 
     .mode-icon {
-        width: 80px;
-        height: 80px;
+        width: 100px;
+        height: 100px;
+        margin-bottom: 25px;
     }
 
     .mode-name {
-        font-size: 32px;
+        margin-bottom: 25px;
     }
 
-    .mode-description {
-        font-size: 14px;
+    .lock-icon svg {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mode-card {
+        padding: 35px 30px;
+    }
+
+    .mode-icon {
+        width: 90px;
+        height: 90px;
+    }
+
+    .lock-icon {
+        bottom: 30px;
+        right: 30px;
     }
 
     .lock-icon svg {
         width: 50px;
         height: 50px;
-    }
-}
-
-@media (max-width: 600px) {
-    .mode-title {
-        font-size: 32px;
-    }
-
-    .mode-subtitle {
-        font-size: 20px;
-    }
-
-    .mode-name {
-        font-size: 28px;
-    }
-
-    .mode-description {
-        font-size: 13px;
     }
 }
 
