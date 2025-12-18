@@ -142,6 +142,19 @@ async function selectMode(mode) {
             body: JSON.stringify({ mode: mode })
         });
         
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error('Server returned non-JSON response:', text);
+            throw new TypeError("Server didn't return JSON!");
+        }
+        
         const data = await response.json();
         if (data.success) {
             console.log(`Game mode set to ${mode}`);
@@ -150,6 +163,7 @@ async function selectMode(mode) {
         }
     } catch (error) {
         console.error('Error setting game mode:', error);
+        console.log('Continuing anyway - mode selection is optional');
     }
     
     // Hide mode selection screen
@@ -442,6 +456,19 @@ async function addPointManual(team) {
             body: JSON.stringify({ team: team })
         });
         
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error('Server returned non-JSON response:', text);
+            throw new TypeError("Server didn't return JSON!");
+        }
+        
         const data = await response.json();
         if (data.success) {
             console.log('Point added successfully');
@@ -452,7 +479,8 @@ async function addPointManual(team) {
         }
     } catch (error) {
         console.error('Error adding point:', error);
-        alert('Network error: ' + error.message);
+        console.error('Make sure the Flask backend is running on http://127.0.0.1:5000');
+        alert('Cannot connect to server. Make sure backend is running!');
     }
 }
 
@@ -466,6 +494,19 @@ async function subtractPoint(team) {
             },
             body: JSON.stringify({ team: team })
         });
+        
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error('Server returned non-JSON response:', text);
+            throw new TypeError("Server didn't return JSON!");
+        }
         
         const data = await response.json();
         if (data.success) {
@@ -496,6 +537,20 @@ function showClickFeedback(team) {
 async function fetchMatchDataAndDisplay() {
     try {
         const response = await fetch(`${API_BASE}/get_match_data`);
+        
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error('Server returned non-JSON response:', text);
+            throw new TypeError("Server didn't return JSON!");
+        }
+        
         const data = await response.json();
         if (data.success && data.match_data) {
             displayWinnerWithData(data.match_data);
@@ -578,6 +633,19 @@ async function resetMatchSilent() {
                 'Content-Type': 'application/json',
             }
         });
+        
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error('Server returned non-JSON response:', text);
+            throw new TypeError("Server didn't return JSON!");
+        }
         
         const data = await response.json();
         if (data.success) {
