@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&wght=400&display=swap');
 
 * {
     margin: 0;
@@ -27,7 +27,9 @@ body {
     position: relative;
 }
 
+/* ====================================== */
 /* Header */
+/* ====================================== */
 .header {
     background: linear-gradient(90deg, #d4af37 0%, #b8860b 100%);
     height: 80px;
@@ -100,7 +102,9 @@ body {
     100% { opacity: 1; }
 }
 
+/* ====================================== */
 /* Logo Container */
+/* ====================================== */
 .logo-container {
     display: flex;
     align-items: center;
@@ -182,7 +186,9 @@ body {
     line-height: 1.2;
 }
 
+/* ====================================== */
 /* Main Scoreboard */
+/* ====================================== */
 .main-scoreboard {
     flex: 1;
     display: flex;
@@ -191,7 +197,9 @@ body {
     transform-origin: center;
 }
 
+/* ====================================== */
 /* Team Sections */
+/* ====================================== */
 .team-section {
     flex: 1;
     display: flex;
@@ -268,8 +276,8 @@ body {
     letter-spacing: 2px;
 }
 
-.yellow-team .team-name { 
-    color: #d4af37; 
+.yellow-team .team-name {
+    color: #d4af37;
 }
 
 .team-circle {
@@ -279,15 +287,17 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.black-circle { 
-    background: #000; 
+.black-circle {
+    background: #000;
 }
 
-.yellow-circle { 
-    background: #d4af37; 
+.yellow-circle {
+    background: #d4af37;
 }
 
+/* ====================================== */
 /* Score Display with Games */
+/* ====================================== */
 .score-container {
     flex: 1;
     display: flex;
@@ -306,7 +316,7 @@ body {
     font-style: italic;
     line-height: 1;
     text-align: center;
-    text-shadow:
+    text-shadow: 
         0 0 30px rgba(0, 0, 0, 1),
         0 0 60px rgba(0, 0, 0, 0.9),
         0 0 90px rgba(0, 0, 0, 0.7),
@@ -322,7 +332,7 @@ body {
     font-style: italic;
     line-height: 1;
     text-align: center;
-    text-shadow:
+    text-shadow: 
         0 0 20px rgba(0, 0, 0, 1),
         0 0 40px rgba(0, 0, 0, 0.8),
         2px 2px 4px rgba(0, 0, 0, 1);
@@ -333,7 +343,9 @@ body {
     color: #fff;
 }
 
+/* ====================================== */
 /* VS Divider */
+/* ====================================== */
 .vs-divider {
     position: absolute;
     left: 50%;
@@ -360,7 +372,9 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* ====================================== */
 /* Sets Score Panel - RED */
+/* ====================================== */
 .sets-score {
     position: fixed;
     left: 50%;
@@ -404,7 +418,9 @@ body {
     transition: all 0.3s ease;
 }
 
+/* ====================================== */
 /* Winner Display with ONLY Sets History */
+/* ====================================== */
 .winner-display {
     position: fixed;
     top: 50%;
@@ -412,23 +428,24 @@ body {
     transform: translate(-50%, -50%);
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.96) 0%, rgba(20, 20, 20, 0.98) 100%);
     border-radius: 25px;
-    padding: 40px;
+    padding: 60px;
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 30px;
+    gap: 40px;
     backdrop-filter: blur(30px);
     border: 4px solid rgba(212, 175, 55, 0.8);
-    box-shadow:
+    box-shadow: 
         0 25px 60px rgba(0, 0, 0, 0.9),
         0 0 80px rgba(212, 175, 55, 0.3),
         inset 0 0 30px rgba(212, 175, 55, 0.1);
     z-index: 100;
     animation: winnerAppear 1.5s ease-out;
     width: 90vw;
-    max-width: 800px;
+    max-width: 900px;
     max-height: 90vh;
     overflow-y: auto;
+    cursor: pointer;
 }
 
 @keyframes winnerAppear {
@@ -451,31 +468,35 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 25px;
     width: 100%;
     border-bottom: 2px solid rgba(212, 175, 55, 0.3);
-    padding-bottom: 30px;
+    padding-bottom: 40px;
 }
 
 .winner-trophy {
-    font-size: 100px;
+    font-size: 120px;
     animation: trophyBounce 3s ease-in-out infinite;
     filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.9));
 }
 
 @keyframes trophyBounce {
-    0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
-    50% { transform: translateY(-8px) scale(1.1) rotate(5deg); }
+    0%, 100% {
+        transform: translateY(0px) scale(1) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.1) rotate(5deg);
+    }
 }
 
 .winner-title {
     color: #d4af37;
     font-weight: 400;
-    font-size: clamp(36px, 6vw, 64px);
+    font-size: clamp(48px, 8vw, 80px);
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 4px;
-    text-shadow:
+    letter-spacing: 6px;
+    text-shadow: 
         0 0 50px rgba(212, 175, 55, 0.9),
         0 0 100px rgba(212, 175, 55, 0.7),
         0 6px 12px rgba(0, 0, 0, 0.8);
@@ -485,13 +506,13 @@ body {
 
 @keyframes glow {
     from {
-        text-shadow:
+        text-shadow: 
             0 0 50px rgba(212, 175, 55, 0.9),
             0 0 100px rgba(212, 175, 55, 0.7),
             0 6px 12px rgba(0, 0, 0, 0.8);
     }
     to {
-        text-shadow:
+        text-shadow: 
             0 0 80px rgba(212, 175, 55, 1),
             0 0 160px rgba(212, 175, 55, 0.9),
             0 10px 20px rgba(0, 0, 0, 0.9);
@@ -501,11 +522,11 @@ body {
 .winner-team-name {
     color: #fff;
     font-weight: 400;
-    font-size: clamp(28px, 5vw, 48px);
+    font-size: clamp(36px, 6vw, 60px);
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 3px;
-    text-shadow:
+    letter-spacing: 4px;
+    text-shadow: 
         0 0 30px rgba(255, 255, 255, 0.6),
         0 4px 8px rgba(0, 0, 0, 0.8);
     text-align: center;
@@ -518,7 +539,7 @@ body {
 .match-summary {
     display: flex;
     justify-content: center;
-    gap: 40px;
+    gap: 50px;
     align-items: center;
     flex-wrap: wrap;
 }
@@ -527,7 +548,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 25px;
+    padding: 20px 30px;
     background: rgba(212, 175, 55, 0.1);
     border-radius: 15px;
     border: 2px solid rgba(212, 175, 55, 0.3);
@@ -536,16 +557,16 @@ body {
 
 .summary-label {
     color: #d4af37;
-    font-size: clamp(12px, 2vw, 16px);
+    font-size: clamp(14px, 2.5vw, 18px);
     font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .summary-value {
     color: #fff;
-    font-size: clamp(20px, 3vw, 32px);
+    font-size: clamp(24px, 4vw, 40px);
     font-weight: 400;
     font-style: italic;
 }
@@ -553,14 +574,14 @@ body {
 /* ONLY Sets Table Section */
 .sets-table-section {
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
 }
 
 .table-container {
     background: rgba(0, 0, 0, 0.4);
     border-radius: 20px;
     border: 2px solid rgba(212, 175, 55, 0.3);
-    padding: 25px;
+    padding: 30px;
     backdrop-filter: blur(15px);
     display: flex;
     flex-direction: column;
@@ -568,13 +589,13 @@ body {
 
 .table-title {
     color: #d4af37;
-    font-size: clamp(18px, 3vw, 24px);
+    font-size: clamp(20px, 3.5vw, 28px);
     font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 2px;
     text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
     border-bottom: 2px solid rgba(212, 175, 55, 0.4);
 }
 
@@ -592,8 +613,8 @@ body {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.8) 0%, rgba(184, 134, 11, 0.8) 100%);
     color: #000;
     font-weight: 400;
-    font-size: clamp(14px, 2.5vw, 18px);
-    padding: 15px 10px;
+    font-size: clamp(16px, 3vw, 20px);
+    padding: 18px 12px;
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -602,8 +623,8 @@ body {
 
 .sets-table td {
     color: #fff;
-    font-size: clamp(13px, 2.2vw, 17px);
-    padding: 15px 10px;
+    font-size: clamp(15px, 2.5vw, 19px);
+    padding: 18px 12px;
     text-align: center;
     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
     background: rgba(255, 255, 255, 0.02);
@@ -634,27 +655,27 @@ body {
     letter-spacing: 1px;
 }
 
-.team-column.black { 
-    color: #ccc; 
+.team-column.black {
+    color: #ccc;
 }
 
-.team-column.yellow { 
-    color: #d4af37; 
+.team-column.yellow {
+    color: #d4af37;
 }
 
 /* Bottom Actions */
 .winner-actions {
     display: flex;
-    gap: 25px;
-    margin-top: 20px;
+    gap: 30px;
+    margin-top: 25px;
 }
 
 .action-button {
-    padding: 15px 35px;
+    padding: 18px 45px;
     border: none;
     border-radius: 20px;
     font-family: 'Anton', Arial, sans-serif;
-    font-size: clamp(14px, 2.5vw, 18px);
+    font-size: clamp(16px, 3vw, 22px);
     font-style: italic;
     cursor: pointer;
     transition: all 0.4s ease;
@@ -692,7 +713,9 @@ body {
     transform: scale(0.95);
 }
 
+/* ====================================== */
 /* Click Feedback */
+/* ====================================== */
 .click-feedback {
     position: absolute;
     top: 50%;
@@ -708,7 +731,7 @@ body {
 
 .black-team .click-feedback {
     color: #d4af37;
-    text-shadow:
+    text-shadow: 
         0 0 30px rgba(0, 0, 0, 1),
         0 0 60px rgba(0, 0, 0, 0.9),
         0 0 90px rgba(212, 175, 55, 0.6);
@@ -716,20 +739,34 @@ body {
 
 .yellow-team .click-feedback {
     color: #000;
-    text-shadow:
+    text-shadow: 
         0 0 30px rgba(255, 255, 255, 1),
         0 0 60px rgba(255, 255, 255, 0.9),
         0 0 90px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes feedbackPulse {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-    70% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.3);
+    }
+    30% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.3);
+    }
+    70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
+/* ====================================== */
 /* Control Panel */
+/* ====================================== */
 .control-panel {
     position: fixed;
     top: 50%;
@@ -771,20 +808,15 @@ body {
     transform: scale(0.95);
 }
 
-/* ============================================================================
-   SPLASH SCREEN
-   ============================================================================ */
-
+/* ====================================== */
+/* SPLASH SCREEN - FULL SCREEN GIF */
+/* ====================================== */
 .splash-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-image: url('back.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -792,17 +824,8 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.5s ease;
-}
-
-.splash-screen::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
+    background: #000;
+    cursor: pointer;
 }
 
 .splash-screen.active {
@@ -810,159 +833,16 @@ body {
     pointer-events: all;
 }
 
-.splash-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 40px;
-    animation: splashPulse 2s ease-in-out infinite;
-    position: relative;
-    z-index: 1;
+.splash-gif {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.splash-logo {
-    width: 500px;
-    height: 500px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 80px rgba(212, 175, 55, 0.9))
-            drop-shadow(0 0 120px rgba(212, 175, 55, 0.6));
-    animation: logoFloat 3s ease-in-out infinite;
-}
-
-.splash-text {
-    color: #d4af37;
-    font-size: 96px;
-    font-weight: 400;
-    font-style: italic;
-    text-transform: uppercase;
-    letter-spacing: 12px;
-    text-shadow: 
-        0 0 50px rgba(212, 175, 55, 0.9),
-        0 0 100px rgba(212, 175, 55, 0.7),
-        0 4px 20px rgba(0, 0, 0, 0.8);
-    animation: textGlow 2s ease-in-out infinite alternate;
-}
-
-.splash-subtitle {
-    color: rgba(212, 175, 55, 0.9);
-    font-size: 28px;
-    font-style: italic;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    animation: subtitleBlink 2s ease-in-out infinite;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-}
-
-.splash-loader {
-    width: 80px;
-    height: 80px;
-    border: 5px solid rgba(212, 175, 55, 0.2);
-    border-top: 5px solid #d4af37;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
-}
-
-@keyframes splashPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-}
-
-@keyframes logoFloat {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-25px) rotate(5deg); }
-}
-
-@keyframes textGlow {
-    from {
-        text-shadow: 
-            0 0 50px rgba(212, 175, 55, 0.9),
-            0 0 100px rgba(212, 175, 55, 0.7),
-            0 4px 20px rgba(0, 0, 0, 0.8);
-    }
-    to {
-        text-shadow: 
-            0 0 80px rgba(212, 175, 55, 1),
-            0 0 150px rgba(212, 175, 55, 0.9),
-            0 6px 30px rgba(0, 0, 0, 0.9);
-    }
-}
-
-@keyframes subtitleBlink {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Mobile responsive splash */
-@media (max-width: 1200px) {
-    .splash-logo {
-        width: 400px;
-        height: 400px;
-    }
-    
-    .splash-text {
-        font-size: 72px;
-        letter-spacing: 8px;
-    }
-    
-    .splash-subtitle {
-        font-size: 22px;
-    }
-    
-    .splash-loader {
-        width: 70px;
-        height: 70px;
-    }
-}
-
-@media (max-width: 800px) {
-    .splash-logo {
-        width: 300px;
-        height: 300px;
-    }
-    
-    .splash-text {
-        font-size: 56px;
-        letter-spacing: 6px;
-    }
-    
-    .splash-subtitle {
-        font-size: 18px;
-        letter-spacing: 3px;
-    }
-    
-    .splash-loader {
-        width: 60px;
-        height: 60px;
-        border-width: 4px;
-    }
-}
-
-@media (max-width: 600px) {
-    .splash-logo {
-        width: 250px;
-        height: 250px;
-    }
-    
-    .splash-text {
-        font-size: 42px;
-        letter-spacing: 4px;
-    }
-    
-    .splash-subtitle {
-        font-size: 16px;
-    }
-}
-
-/* ============================================================================
-   TOAST NOTIFICATIONS
-   ============================================================================ */
-
+/* ====================================== */
+/* TOAST NOTIFICATIONS */
+/* ====================================== */
 .toast-container {
     position: fixed;
     top: 100px;
@@ -1145,15 +1025,49 @@ body {
     }
 }
 
+/* ====================================== */
 /* Responsive Design */
+/* ====================================== */
 @media (max-width: 900px) {
     .winner-display {
         width: 95vw;
-        padding: 30px 25px;
+        padding: 40px 30px;
+        gap: 30px;
+    }
+    
+    .winner-trophy {
+        font-size: 90px;
+    }
+    
+    .match-summary {
         gap: 25px;
     }
     
-    .winner-trophy { font-size: 70px; }
+    .summary-item {
+        padding: 15px 25px;
+    }
+    
+    .winner-actions {
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+    }
+    
+    .action-button {
+        padding: 15px 30px;
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .winner-display {
+        padding: 30px 20px;
+        gap: 25px;
+    }
+    
+    .winner-trophy {
+        font-size: 70px;
+    }
     
     .match-summary {
         gap: 20px;
@@ -1163,59 +1077,58 @@ body {
         padding: 12px 20px;
     }
     
-    .winner-actions {
-        flex-direction: column;
-        gap: 15px;
-        width: 100%;
-    }
-    
-    .action-button {
-        padding: 12px 25px;
-        width: 100%;
-    }
-}
-
-@media (max-width: 600px) {
-    .winner-display {
-        padding: 25px 20px;
-        gap: 20px;
-    }
-    
-    .winner-trophy { font-size: 60px; }
-    
-    .match-summary {
-        gap: 15px;
-    }
-    
-    .summary-item {
-        padding: 10px 15px;
-    }
-    
     .table-container {
-        padding: 20px 15px;
+        padding: 25px 20px;
     }
     
     .sets-table th,
     .sets-table td {
-        padding: 12px 8px;
-        font-size: clamp(11px, 2.8vw, 15px);
+        padding: 15px 10px;
+        font-size: clamp(12px, 3vw, 17px);
     }
 }
 
 /* Standard Responsive Design */
 @media (max-width: 1400px) {
-    .score-main { font-size: clamp(100px, 12vw, 220px); }
-    .team-games { font-size: clamp(30px, 4vw, 60px); }
-    .vs-divider { width: 100px; height: 100px; }
-    .vs-text { font-size: 30px; }
+    .score-main {
+        font-size: clamp(100px, 12vw, 220px);
+    }
+    
+    .team-games {
+        font-size: clamp(30px, 4vw, 60px);
+    }
+    
+    .vs-divider {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .vs-text {
+        font-size: 30px;
+    }
 }
 
 @media (max-width: 1200px) {
-    .score-main { font-size: clamp(80px, 10vw, 180px); }
-    .team-games { font-size: clamp(25px, 3vw, 50px); }
-    .team-name { font-size: 24px; }
-    .tournament-title { font-size: 16px; }
-    .logo { width: 50px; height: 50px; }
+    .score-main {
+        font-size: clamp(80px, 10vw, 180px);
+    }
+    
+    .team-games {
+        font-size: clamp(25px, 3vw, 50px);
+    }
+    
+    .team-name {
+        font-size: 24px;
+    }
+    
+    .tournament-title {
+        font-size: 16px;
+    }
+    
+    .logo {
+        width: 50px;
+        height: 50px;
+    }
 }
 
 @media (max-width: 800px) {
@@ -1224,36 +1137,101 @@ body {
         padding: 0 20px;
     }
     
-    .time-display { font-size: 24px; }
-    .score-main { font-size: clamp(60px, 8vw, 120px); }
-    .team-games { font-size: clamp(20px, 2.5vw, 40px); }
-    .vs-divider { width: 80px; height: 80px; }
-    .vs-text { font-size: 20px; }
+    .time-display {
+        font-size: 24px;
+    }
+    
+    .score-main {
+        font-size: clamp(60px, 8vw, 120px);
+    }
+    
+    .team-games {
+        font-size: clamp(20px, 2.5vw, 40px);
+    }
+    
+    .vs-divider {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .vs-text {
+        font-size: 20px;
+    }
     
     .sets-score {
         bottom: 20px;
         padding: 15px 25px;
     }
     
-    .sets-score-number { font-size: 28px; }
-    .team-header { padding: 30px 30px; }
-    .team-label { min-width: 200px; padding: 10px 30px; }
-    .team-name { font-size: 20px; }
-    .control-panel { right: 10px; }
-    .logo { width: 45px; height: 45px; }
+    .sets-score-number {
+        font-size: 28px;
+    }
+    
+    .team-header {
+        padding: 30px 30px;
+    }
+    
+    .team-label {
+        min-width: 200px;
+        padding: 10px 30px;
+    }
+    
+    .team-name {
+        font-size: 20px;
+    }
+    
+    .control-panel {
+        right: 10px;
+    }
+    
+    .logo {
+        width: 45px;
+        height: 45px;
+    }
 }
 
 @media (max-width: 600px) {
-    .header { padding: 0 15px; }
-    .tournament-title { font-size: 14px; }
-    .time-display { font-size: 20px; }
-    .score-main { font-size: clamp(40px, 6vw, 80px); }
-    .team-games { font-size: clamp(15px, 2vw, 30px); }
-    .team-header { padding: 0 20px; }
-    .team-label { min-width: 150px; padding: 8px 20px; }
-    .team-name { font-size: 16px; }
-    .logo { width: 40px; height: 40px; }
-    .logo-text { font-size: 12px; }
+    .header {
+        padding: 0 15px;
+    }
+    
+    .tournament-title {
+        font-size: 14px;
+    }
+    
+    .time-display {
+        font-size: 20px;
+    }
+    
+    .score-main {
+        font-size: clamp(40px, 6vw, 80px);
+    }
+    
+    .team-games {
+        font-size: clamp(15px, 2vw, 30px);
+    }
+    
+    .team-header {
+        padding: 0 20px;
+    }
+    
+    .team-label {
+        min-width: 150px;
+        padding: 8px 20px;
+    }
+    
+    .team-name {
+        font-size: 16px;
+    }
+    
+    .logo {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .logo-text {
+        font-size: 12px;
+    }
     
     .logo-container {
         gap: 10px;
@@ -1261,10 +1239,9 @@ body {
     }
 }
 
-/* ============================================================================
-   MODE SELECTION SCREEN
-   ============================================================================ */
-
+/* ====================================== */
+/* MODE SELECTION SCREEN */
+/* ====================================== */
 .mode-selection-screen {
     position: fixed;
     top: 0;
@@ -1430,7 +1407,7 @@ body {
 
 /* Mode Titles - WHITE */
 .mode-name {
-    color: #fff;  /* WHITE for all mode titles */
+    color: #fff; /* WHITE for all mode titles */
     font-size: 48px;
     font-weight: 400;
     font-style: italic;
@@ -1441,12 +1418,12 @@ body {
 }
 
 .mode-tournament .mode-name {
-    color: #fff;  /* WHITE for tournament title too */
+    color: #fff; /* WHITE for tournament title too */
 }
 
 /* Mode Description Text - BLACK */
 .mode-description {
-    color: #000;  /* BLACK text for descriptions */
+    color: #000; /* BLACK text for descriptions */
     font-size: 20px;
     font-weight: 400;
     font-style: italic;
@@ -1462,19 +1439,19 @@ body {
 }
 
 .highlight-gold {
-    color: #000;  /* BLACK for emphasized text */
+    color: #000; /* BLACK for emphasized text */
     font-weight: 700;
     text-transform: uppercase;
 }
 
 /* Locked Mode Text */
 .mode-locked-text {
-    color: #000;  /* BLACK text for locked mode description */
+    color: #000; /* BLACK text for locked mode description */
     font-size: 18px;
 }
 
 .locked-title {
-    color: #fff;  /* WHITE for "MODE TOURNOIS" title */
+    color: #fff; /* WHITE for "MODE TOURNOIS" title */
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 10px;
@@ -1482,7 +1459,7 @@ body {
 }
 
 .highlight-white {
-    color: #000;  /* BLACK text for locked description */
+    color: #000; /* BLACK text for locked description */
     font-weight: 400;
 }
 
