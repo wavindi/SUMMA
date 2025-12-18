@@ -3,166 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Padel Scoreboard</title>
+    <title>PADEL CHAMPIONSHIP</title>
     <link rel="stylesheet" href="padel_css.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-    <!-- ========================================= -->
+
+    <!-- ================================================================================================= -->
     <!-- SPLASH SCREEN -->
-    <!-- ========================================= -->
+    <!-- ================================================================================================= -->
     <div id="splashScreen" class="splash-screen active">
         <img src="splash.gif" alt="SUMMA" class="splash-gif">
     </div>
 
-    <!-- ========================================= -->
-    <!-- GAME MODE SELECTION SCREEN -->
-    <!-- ========================================= -->
+    <!-- ================================================================================================= -->
+    <!-- MODE SELECTION SCREEN -->
+    <!-- ================================================================================================= -->
     <div id="modeSelectionScreen" class="mode-selection-screen">
-        <div class="mode-header">
-            <div class="mode-title">GAME MODE</div>
-            <div class="mode-subtitle">SELECTION</div>
-        </div>
-
-        <div class="mode-logo-top">
-            <img src="logo.png" alt="ALTUS PADEL CLUB" class="altus-logo">
-        </div>
-
-        <div class="mode-cards-container">
-            <!-- BASIC MODE -->
-            <div class="mode-card mode-basic" onclick="selectMode('basic')">
-                <div class="mode-icon">
-                    <svg viewBox="0 0 100 130" class="padel-racket-icon">
-                        <!-- Racket head (oval with grid) -->
-                        <ellipse cx="50" cy="40" rx="28" ry="35" fill="none" stroke="#000" stroke-width="4"/>
-                        <!-- Grid pattern inside racket -->
-                        <g stroke="#000" stroke-width="1.5" opacity="0.8">
-                            <!-- Vertical lines -->
-                            <line x1="35" y1="15" x2="35" y2="65"/>
-                            <line x1="43" y1="10" x2="43" y2="70"/>
-                            <line x1="50" y1="8" x2="50" y2="72"/>
-                            <line x1="57" y1="10" x2="57" y2="70"/>
-                            <line x1="65" y1="15" x2="65" y2="65"/>
-                            <!-- Horizontal lines -->
-                            <line x1="25" y1="25" x2="75" y2="25"/>
-                            <line x1="23" y1="35" x2="77" y2="35"/>
-                            <line x1="23" y1="45" x2="77" y2="45"/>
-                            <line x1="25" y1="55" x2="75" y2="55"/>
-                        </g>
-                        <!-- Handle -->
-                        <rect x="46" y="70" width="8" height="45" rx="2" fill="#000"/>
-                        <rect x="44" y="112" width="12" height="8" rx="2" fill="#000"/>
-                    </svg>
-                </div>
-                <div class="mode-name">BASIC</div>
-                <div class="mode-description">
-                    <span class="mode-desc-line"><span class="highlight-gold">SIDE SWITCH</span> Only after <span class="highlight-gold">GAME 1</span></span>
-                    <span class="mode-desc-line">Simple mode for casual play</span>
-                    <span class="mode-desc-line">Perfect for beginners</span>
-                </div>
+        <div class="mode-container">
+            <div class="mode-header">
+                <h1 class="mode-title">GAME MODE</h1>
+                <h2 class="mode-subtitle">SELECTION</h2>
             </div>
 
-            <!-- COMPETITION MODE -->
-            <div class="mode-card mode-competition" onclick="selectMode('competition')">
-                <div class="mode-icon">
-                    <svg viewBox="0 0 100 100" class="trophy-icon">
-                        <!-- Cup handles -->
-                        <path d="M 25 25 Q 18 25 18 35 Q 18 42 25 45" fill="none" stroke="#000" stroke-width="4"/>
-                        <path d="M 75 25 Q 82 25 82 35 Q 82 42 75 45" fill="none" stroke="#000" stroke-width="4"/>
-                        <!-- Top rim -->
-                        <rect x="30" y="20" width="40" height="6" fill="#000" rx="2"/>
-                        <!-- Cup body -->
-                        <path d="M 35 26 L 32 50 Q 32 58 50 58 Q 68 58 68 50 L 65 26 Z" fill="#000"/>
-                        <!-- Base stem -->
-                        <rect x="45" y="58" width="10" height="18" fill="#000"/>
-                        <!-- Base plate -->
-                        <ellipse cx="50" cy="76" rx="16" ry="4" fill="#000"/>
-                    </svg>
+            <div class="mode-options">
+                <!-- BASIC MODE -->
+                <div class="mode-card" onclick="selectMode('basic')">
+                    <div class="mode-icon">
+                        <div class="mode-number">1</div>
+                    </div>
+                    <h3 class="mode-name">BASIC</h3>
+                    <div class="mode-switch-info">
+                        <span class="switch-label">SIDE SWITCH:</span>
+                        <span class="switch-value">Only after<br><strong>GAME 1</strong></span>
+                    </div>
+                    <ul class="mode-features">
+                        <li>Simple mode for casual play</li>
+                        <li>Perfect for beginners</li>
+                    </ul>
                 </div>
-                <div class="mode-name">COMPETITION</div>
-                <div class="mode-description">
-                    <span class="mode-desc-line"><span class="highlight-gold">SIDE SWITCH</span> After <span class="highlight-gold">ODD GAMES</span></span>
-                    <span class="mode-desc-line">1, 3, 5, 7, ...</span>
-                    <span class="mode-desc-line">Official padel rules</span>
-                </div>
-            </div>
 
-            <!-- LOCK MODE (renamed from TOURNOI) -->
-            <div class="mode-card mode-tournament locked" onclick="selectMode('lock')">
-                <div class="mode-icon">
-                    <svg viewBox="0 0 100 100" class="podium-icon">
-                        <!-- Trophy on top -->
-                        <g transform="translate(50, 5)">
-                            <!-- Small trophy -->
-                            <path d="M -8 5 Q -10 5 -10 8 Q -10 10 -8 11" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M 8 5 Q 10 5 10 8 Q 10 10 8 11" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                            <rect x="-6" y="3" width="12" height="2" fill="currentColor"/>
-                            <path d="M -4 5 L -4 11 Q -4 14 0 14 Q 4 14 4 11 L 4 5 Z" fill="currentColor"/>
-                            <rect x="-5" y="14" width="10" height="4" fill="currentColor"/>
-                            <ellipse cx="0" cy="18" rx="6" ry="1.5" fill="currentColor"/>
-                            <!-- Sparkles -->
-                            <g transform="translate(-15, 0)">
-                                <path d="M 0 0 L 1 3 L 4 4 L 1 5 L 0 8 L -1 5 L -4 4 L -1 3 Z" fill="currentColor"/>
-                            </g>
-                            <g transform="translate(15, 2)">
-                                <path d="M 0 0 L 1 3 L 4 4 L 1 5 L 0 8 L -1 5 L -4 4 L -1 3 Z" fill="currentColor"/>
-                            </g>
-                        </g>
-                        <!-- Podium blocks -->
-                        <!-- 3rd place (left) -->
-                        <rect x="10" y="60" width="22" height="30" fill="currentColor"/>
-                        <text x="21" y="78" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">3</text>
-                        <!-- 1st place (middle, tallest) -->
-                        <rect x="39" y="45" width="22" height="45" fill="currentColor"/>
-                        <text x="50" y="70" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">1</text>
-                        <!-- 2nd place (right) -->
-                        <rect x="68" y="55" width="22" height="35" fill="currentColor"/>
-                        <text x="79" y="75" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">2</text>
-                    </svg>
+                <!-- COMPETITION MODE -->
+                <div class="mode-card mode-featured" onclick="selectMode('competition')">
+                    <div class="mode-icon featured">
+                        <div class="mode-number">2</div>
+                    </div>
+                    <h3 class="mode-name">COMPETITION</h3>
+                    <div class="mode-switch-info">
+                        <span class="switch-label">SIDE SWITCH:</span>
+                        <span class="switch-value">After<br><strong>ODD GAMES</strong><br>(1, 3, 5, 7, ...)</span>
+                    </div>
+                    <ul class="mode-features">
+                        <li>Official padel rules</li>
+                    </ul>
                 </div>
-                <div class="mode-name">LOCK</div>
-                <div class="mode-description mode-locked-text">
-                    <span class="mode-desc-line locked-title">PREMIUM MODE</span>
-                    <span class="mode-desc-line"><span class="highlight-white">Same as COMPETITION</span></span>
-                    <span class="mode-desc-line"><span class="highlight-white">Professional tournaments</span></span>
-                    <span class="mode-desc-line"><span class="highlight-white">Full statistics tracking</span></span>
-                </div>
-                <div class="lock-icon">
-                    <svg viewBox="0 0 50 60" width="50" height="60">
-                        <!-- Lock body -->
-                        <rect x="12" y="25" width="26" height="28" rx="3" fill="#000"/>
-                        <!-- Shackle -->
-                        <path d="M 18 25 L 18 15 Q 18 8 25 8 Q 32 8 32 15 L 32 25" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                        <!-- Keyhole -->
-                        <circle cx="25" cy="37" r="3" fill="#d4af37"/>
-                        <rect x="23.5" y="37" width="3" height="8" fill="#d4af37"/>
-                    </svg>
+
+                <!-- PREMIUM MODE -->
+                <div class="mode-card mode-premium" onclick="selectMode('premium')">
+                    <div class="mode-icon premium">
+                        <div class="mode-number">3</div>
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                    <h3 class="mode-name">PREMIUM MODE</h3>
+                    <div class="mode-switch-info">
+                        <span class="switch-label">Same as COMPETITION</span>
+                    </div>
+                    <ul class="mode-features">
+                        <li>Professional tournaments</li>
+                        <li>Full statistics tracking</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- TOAST CONTAINER -->
-    <!-- ========================================= -->
-    <div id="toastContainer" class="toast-container"></div>
-
-    <!-- ========================================= -->
+    <!-- ================================================================================================= -->
     <!-- MAIN SCOREBOARD -->
-    <!-- ========================================= -->
+    <!-- ================================================================================================= -->
     <div class="scoreboard">
         <!-- Header -->
         <div class="header">
             <div class="tournament-info">
-                <div class="tournament-title">PADEL CHAMPIONSHIP</div>
+                <span class="tournament-title">PADEL CHAMPIONSHIP</span>
             </div>
+            
             <div class="time-display" id="timeDisplay">19:22</div>
+            
             <div class="live-indicator">
                 <div class="live-dot"></div>
-                <div class="live-text">LIVE</div>
+                <span class="live-text">LIVE</span>
             </div>
+
             <div class="logo-container">
-                <div class="logo" id="logoClick">
+                <div class="logo no-image" id="logoClick">
                     <img src="logo.png" alt="Logo" class="logo-img" id="logoImg">
                     <div class="logo-fallback">P</div>
                 </div>
@@ -177,34 +110,34 @@
                 <div class="team-header">
                     <div class="team-label">
                         <div class="team-circle black-circle"></div>
-                        <div class="team-name">BLACK</div>
+                        <span class="team-name">BLACK</span>
                     </div>
                 </div>
                 <div class="score-container">
-                    <div class="score-main" id="scoreBlack">0</div>
                     <div class="team-games" id="gamesBlack">0</div>
+                    <div class="score-main" id="scoreBlack">0</div>
+                    <div class="click-feedback" id="clickFeedbackBlack">+1</div>
                 </div>
-                <div class="click-feedback" id="clickFeedbackBlack">+1</div>
             </div>
 
             <!-- Yellow Team -->
             <div class="team-section yellow-team">
                 <div class="team-header">
                     <div class="team-label">
+                        <span class="team-name">YELLOW</span>
                         <div class="team-circle yellow-circle"></div>
-                        <div class="team-name">YELLOW</div>
                     </div>
                 </div>
                 <div class="score-container">
-                    <div class="score-main" id="scoreYellow">0</div>
                     <div class="team-games" id="gamesYellow">0</div>
+                    <div class="score-main" id="scoreYellow">0</div>
+                    <div class="click-feedback" id="clickFeedbackYellow">+1</div>
                 </div>
-                <div class="click-feedback" id="clickFeedbackYellow">+1</div>
             </div>
 
             <!-- VS Divider -->
             <div class="vs-divider">
-                <div class="vs-text">VS</div>
+                <span class="vs-text">VS</span>
             </div>
         </div>
 
@@ -213,61 +146,77 @@
             <div class="sets-label">SETS</div>
             <div class="sets-scores">
                 <div class="sets-score-number" id="setsBlack">0</div>
-                <div style="color: #d4af37; font-size: 40px;">:</div>
+                <div style="color: rgba(255,255,255,0.4); font-size: 40px;">-</div>
                 <div class="sets-score-number" id="setsYellow">0</div>
             </div>
         </div>
+    </div>
 
-        <!-- Winner Display -->
-        <div class="winner-display" id="winnerDisplay">
-            <div class="winner-header">
-                <div class="winner-trophy">🏆</div>
-                <div class="winner-title">MATCH WINNER</div>
-                <div class="winner-team-name" id="winnerTeamName">BLACK TEAM</div>
+    <!-- ================================================================================================= -->
+    <!-- WINNER DISPLAY -->
+    <!-- ================================================================================================= -->
+    <div id="winnerDisplay" class="winner-display">
+        <div class="winner-header">
+            <div class="winner-trophy">🏆</div>
+            <h1 class="winner-title">MATCH WINNER</h1>
+            <h2 class="winner-team-name" id="winnerTeamName">BLACK TEAM</h2>
+        </div>
+
+        <div class="match-summary">
+            <div class="summary-item">
+                <span class="summary-label">Final Sets</span>
+                <span class="summary-value" id="finalSetsScore">2-0</span>
             </div>
-
-            <div class="match-summary">
-                <div class="summary-item">
-                    <div class="summary-label">Final Sets</div>
-                    <div class="summary-value" id="finalSetsScore">2-0</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Duration</div>
-                    <div class="summary-value" id="matchDuration">45 min</div>
-                </div>
-            </div>
-
-            <div class="sets-table-section">
-                <div class="table-container">
-                    <div class="table-title">SETS BREAKDOWN</div>
-                    <table class="sets-table">
-                        <thead>
-                            <tr>
-                                <th>Set</th>
-                                <th>Black</th>
-                                <th>Yellow</th>
-                                <th>Winner</th>
-                            </tr>
-                        </thead>
-                        <tbody id="setsTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="winner-actions">
-                <button class="action-button new-match-btn" onclick="newMatch()">NEW MATCH</button>
+            <div class="summary-item">
+                <span class="summary-label">Duration</span>
+                <span class="summary-value" id="matchDuration">45 min</span>
             </div>
         </div>
 
-        <!-- Control Panel -->
-        <div class="control-panel" id="controlPanel" style="display: none;">
-            <button class="control-btn" onclick="addPointManual('black')">+1 Black</button>
-            <button class="control-btn" onclick="addPointManual('yellow')">+1 Yellow</button>
-            <button class="control-btn" onclick="subtractPoint('black')">-1 Black</button>
-            <button class="control-btn" onclick="subtractPoint('yellow')">-1 Yellow</button>
-            <button class="control-btn" onclick="resetMatch()">Reset</button>
+        <div class="sets-table-section">
+            <div class="table-container">
+                <h3 class="table-title">SETS BREAKDOWN</h3>
+                <table class="sets-table">
+                    <thead>
+                        <tr>
+                            <th>Set</th>
+                            <th>Black</th>
+                            <th>Yellow</th>
+                            <th>Winner</th>
+                        </tr>
+                    </thead>
+                    <tbody id="setsTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="winner-actions">
+            <button class="action-button new-match-btn" onclick="newMatch()">NEW MATCH</button>
+            <button class="action-button share-btn" onclick="shareResults()">+1 Black</button>
+            <button class="action-button share-btn" onclick="shareResults()">+1 Yellow</button>
+            <button class="action-button share-btn" onclick="shareResults()">-1 Black</button>
+            <button class="action-button share-btn" onclick="shareResults()">-1 Yellow</button>
+            <button class="action-button share-btn" onclick="shareResults()">Reset</button>
         </div>
     </div>
+
+    <!-- ================================================================================================= -->
+    <!-- CONTROL PANEL -->
+    <!-- ================================================================================================= -->
+    <div id="controlPanel" class="control-panel" style="display: none;">
+        <button class="control-btn" onclick="addPointManual('black')">+1 Black</button>
+        <button class="control-btn" onclick="addPointManual('yellow')">+1 Yellow</button>
+        <button class="control-btn" onclick="subtractPoint('black')">-1 Black</button>
+        <button class="control-btn" onclick="subtractPoint('yellow')">-1 Yellow</button>
+        <button class="control-btn" onclick="resetMatch()">Reset</button>
+    </div>
+
+    <!-- ================================================================================================= -->
+    <!-- TOAST NOTIFICATIONS -->
+    <!-- ================================================================================================= -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="padel_js.js"></script>
 </body>
