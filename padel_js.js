@@ -1,7 +1,7 @@
-// ====================================
+// =================================================================================================
 // SOCKET.IO REAL-TIME CONNECTION
-// ====================================
-const socket = io("http://127.0.0.1:5000", {
+// =================================================================================================
+const socket = io('http://127.0.0.1:5000', {
     transports: ['polling', 'websocket'],
     reconnection: true,
     reconnectionDelay: 1000,
@@ -9,42 +9,49 @@ const socket = io("http://127.0.0.1:5000", {
 });
 
 socket.on('connect', () => {
-    console.log('Connected to server via Socket.IO');
-    socket.emit('request_game_state');
+    console.log('✅ Connected to server via Socket.IO');
+    socket.emit('request_gamestate');
 });
 
 socket.on('disconnect', () => {
-    console.log('Disconnected from server');
+    console.log('❌ Disconnected from server');
 });
 
-socket.on('game_state_update', (data) => {
-    console.log('Game state update received:', data);
+socket.on('gamestateupdate', (data) => {
+    console.log('📡 Game state update received:', data);
     updateFromGameState(data);
 });
 
-socket.on('point_scored', (data) => {
-    console.log('Point scored:', data);
+socket.on('pointscored', (data) => {
+    console.log('🎯 Point scored:', data);
     
-    // If winner screen is showing, hide it when point is scored
+    // If winner screen is showing, dismiss it and go to splash
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-        console.log('Winner screen visible - closing on sensor point');
-        returnToSplashScreen();
+        console.log('🏆 Winner screen visible - going to splash on sensor point');
+        clearWinnerTimeout();
+        goToSplashFromWinner();
         return;
     }
     
+    // If splash is showing, dismiss it
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen && splashScreen.classList.contains('active')) {
+        dismissSplash();
+    }
+    
     showClickFeedback(data.team);
-    showToast(data.action, data.team, data.game_state);
+    showToast(data.action, data.team, data.gamestate);
 });
 
-socket.on('match_won', (data) => {
-    console.log('Match won:', data);
+socket.on('matchwon', (data) => {
+    console.log('🏆 Match won:', data);
     displayWinner(data);
 });
 
-// ====================================
+// =================================================================================================
 // GAME VARIABLES
-// ====================================
+// =================================================================================================
 let score1 = 0;
 let score2 = 0;
 let games1 = 0;
@@ -57,15 +64,16 @@ let winnerData = null;
 let setsHistory = [];
 let matchStartTime = Date.now();
 let splashDismissed = false;
-let winnerScreenTimeout = null;
+let winnerDismissTimeout = null;
 
 const API_BASE = "http://127.0.0.1:5000";
 
-// ====================================
+// =================================================================================================
 // INITIALIZATION
-// ====================================
+// =================================================================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Padel Scoreboard Initialized');
+    console.log('🏓 Padel Scoreboard Initialized');
+    
     setupSplashScreen();
     setupLogo();
     updateTime();
@@ -74,96 +82,66 @@ document.addEventListener('DOMContentLoaded', function() {
     setupWinnerScreenClickDismiss();
 });
 
-// ====================================
+// =================================================================================================
 // SPLASH SCREEN
-// ====================================
+// =================================================================================================
 function setupSplashScreen() {
     const splashScreen = document.getElementById('splashScreen');
     
     // Dismiss splash and show mode selection
-    const dismissSplash = () => {
-        if (!splashDismissed) {
-            splashDismissed = true;
-            splashScreen.classList.remove('active');
-            // Show mode selection after splash
-            setTimeout(() => {
-                showModeSelection();
-            }, 500);
-            console.log('Splash screen dismissed');
-        }
+    const dismissSplashHandler = () => {
+        dismissSplash();
     };
     
-    // Click and touch events
-    splashScreen.addEventListener('click', dismissSplash);
-    splashScreen.addEventListener('touchstart', dismissSplash);
+    splashScreen.addEventListener('click', dismissSplashHandler);
+    splashScreen.addEventListener('touchstart', dismissSplashHandler);
 }
 
-// Function to show splash screen (called from winner screen)
-function showSplashScreen() {
-    const splashScreen = document.getElementById('splashScreen');
-    const modeScreen = document.getElementById('modeSelectionScreen');
-    
-    // Hide mode screen
-    if (modeScreen) {
-        modeScreen.classList.remove('active');
-        modeScreen.style.display = 'none';
+function dismissSplash() {
+    if (!splashDismissed) {
+        splashDismissed = true;
+        const splashScreen = document.getElementById('splashScreen');
+        splashScreen.classList.remove('active');
+        
+        // Show mode selection after splash
+        setTimeout(() => {
+            showModeSelection();
+        }, 500);
+        
+        console.log('✨ Splash screen dismissed - showing mode selection');
     }
-    
-    // Show splash
-    splashScreen.classList.add('active');
-    splashDismissed = false;
-    console.log('Returned to splash screen');
 }
 
-// ====================================
+// =================================================================================================
 // MODE SELECTION SCREEN
-// ====================================
+// =================================================================================================
 function showModeSelection() {
     const modeScreen = document.getElementById('modeSelectionScreen');
     if (modeScreen) {
-        modeScreen.style.display = 'flex';
-        setTimeout(() => {
-            modeScreen.classList.add('active');
-        }, 50);
-        console.log('Mode selection screen shown');
+        modeScreen.classList.add('active');
+        console.log('🎮 Mode selection screen shown');
     }
 }
 
 async function selectMode(mode) {
-    console.log('Mode selected:', mode);
+    console.log(`🎯 Mode selected: ${mode}`);
     
     // Send mode to backend
     try {
-        const response = await fetch(`${API_BASE}/set_game_mode`, {
+        const response = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: mode })
         });
         
-        // Check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        // Check content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error('Server returned non-JSON response:', text);
-            throw new TypeError("Server didn't return JSON!");
-        }
-        
         const data = await response.json();
         if (data.success) {
-            console.log(`Game mode set to ${mode}`);
+            console.log(`✅ Game mode set to: ${mode}`);
         } else {
-            console.error('Failed to set game mode:', data.error);
+            console.error('❌ Failed to set game mode:', data.error);
         }
     } catch (error) {
-        console.error('Error setting game mode:', error);
-        console.log('Continuing anyway - mode selection is optional');
+        console.error('❌ Error setting game mode:', error);
     }
     
     // Hide mode selection screen
@@ -176,73 +154,79 @@ async function selectMode(mode) {
     }
     
     // Show scoreboard (it's already visible in the background)
-    console.log('Scoreboard ready');
+    console.log('📊 Scoreboard ready');
 }
 
-// ====================================
-// WINNER SCREEN CLICK TO DISMISS
-// ====================================
+// =================================================================================================
+// WINNER SCREEN MANAGEMENT
+// =================================================================================================
 function setupWinnerScreenClickDismiss() {
     const winnerDisplay = document.getElementById('winnerDisplay');
     
     if (winnerDisplay) {
-        winnerDisplay.addEventListener('click', (e) => {
+        winnerDisplay.addEventListener('click', function(e) {
             // Don't close if clicking on buttons
-            if (e.target.closest('.action-button')) return;
+            if (e.target.closest('.action-button')) {
+                return;
+            }
             
             // Only close if the winner screen is actually visible
             if (winnerDisplay.style.display === 'flex') {
-                console.log('Winner screen clicked - returning to splash');
-                returnToSplashScreen();
+                console.log('👆 Winner screen clicked - going to splash');
+                clearWinnerTimeout();
+                goToSplashFromWinner();
             }
         });
         
-        console.log('Winner screen click-to-dismiss enabled');
+        console.log('✅ Winner screen click-to-dismiss enabled');
     }
 }
 
-// Return to splash screen after winner display
-function returnToSplashScreen() {
-    const winnerDisplay = document.getElementById('winnerDisplay');
-    
-    // Clear any existing timeout
-    if (winnerScreenTimeout) {
-        clearTimeout(winnerScreenTimeout);
-        winnerScreenTimeout = null;
+function clearWinnerTimeout() {
+    if (winnerDismissTimeout) {
+        clearTimeout(winnerDismissTimeout);
+        winnerDismissTimeout = null;
     }
-    
+}
+
+function goToSplashFromWinner() {
     // Hide winner display
+    const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
         winnerDisplay.style.display = 'none';
     }
     
-    // Reset match silently
-    resetMatchSilent();
+    // Reset splash dismissed flag
+    splashDismissed = false;
     
     // Show splash screen
-    showSplashScreen();
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen) {
+        splashScreen.classList.add('active');
+        console.log('🎬 Splash screen displayed after winner');
+    }
 }
 
-// ====================================
+// =================================================================================================
 // TOAST NOTIFICATIONS
-// ====================================
+// =================================================================================================
 function showToast(action, team, gameState) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
-    
+
     const teamName = team === 'black' ? 'BLACK' : 'YELLOW';
-    let icon = '⚡';
+    let icon = '🎯';
     let title = 'POINT SCORED';
     let message = `${teamName} team scored!`;
     let toastType = 'toast-point';
-    
+
     if (action === 'game') {
-        icon = '🎯';
+        icon = '🎾';
         title = 'GAME WON';
         message = `${teamName} wins the game! ${gameState.game1}-${gameState.game2}`;
         toastType = 'toast-game';
     } else if (action === 'set') {
-        icon = '🔥';
+        icon = '🏅';
         title = 'SET WON';
         message = `${teamName} wins the set! Sets: ${gameState.set1}-${gameState.set2}`;
         toastType = 'toast-set';
@@ -252,7 +236,7 @@ function showToast(action, team, gameState) {
         message = `${teamName} wins the match!`;
         toastType = 'toast-match';
     }
-    
+
     const toast = document.createElement('div');
     toast.className = `toast ${toastType}`;
     toast.innerHTML = `
@@ -263,14 +247,14 @@ function showToast(action, team, gameState) {
         </div>
         <div class="toast-close">×</div>
     `;
-    
+
     container.appendChild(toast);
-    
+
     // Close button
     const closeBtn = toast.querySelector('.toast-close');
     closeBtn.addEventListener('click', () => removeToast(toast));
-    
-    // Auto-remove after duration (based on type)
+
+    // Auto-remove after duration based on type
     const duration = action === 'match' ? 8000 : action === 'set' ? 5000 : action === 'game' ? 4000 : 3000;
     setTimeout(() => removeToast(toast), duration);
 }
@@ -284,82 +268,85 @@ function removeToast(toast) {
     }, 400);
 }
 
-// ====================================
-// SETUP CLICKABLE TEAMS - WITH WINNER SCREEN RESET
-// ====================================
+// =================================================================================================
+// SETUP CLICKABLE TEAMS
+// =================================================================================================
 function setupClickableTeams() {
     const blackTeam = document.querySelector('.team-section.black-team');
     const yellowTeam = document.querySelector('.team-section.yellow-team');
-    
+
     if (blackTeam) {
         blackTeam.style.cursor = 'pointer';
-        blackTeam.addEventListener('click', (e) => {
+        blackTeam.addEventListener('click', function(e) {
             if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) return;
             
-            // If winner screen is showing, return to splash instead of adding point
+            // If winner screen is showing, go to splash instead of adding point
             const winnerDisplay = document.getElementById('winnerDisplay');
             if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-                console.log('Winner screen visible - returning to splash');
-                returnToSplashScreen();
+                console.log('🏆 Winner screen visible - going to splash');
+                clearWinnerTimeout();
+                goToSplashFromWinner();
                 return;
             }
             
-            console.log('Black team clicked');
+            // If splash is showing, dismiss it first
+            const splashScreen = document.getElementById('splashScreen');
+            if (splashScreen && splashScreen.classList.contains('active')) {
+                dismissSplash();
+            }
+            
+            console.log('⚫ Black team clicked');
             addPointManual('black');
-            hideSplashOnFirstPoint();
         });
-        console.log('Black team click listener added');
+        console.log('✅ Black team click listener added');
     }
-    
+
     if (yellowTeam) {
         yellowTeam.style.cursor = 'pointer';
-        yellowTeam.addEventListener('click', (e) => {
+        yellowTeam.addEventListener('click', function(e) {
             if (e.target.closest('#controlPanel')) return;
             
-            // If winner screen is showing, return to splash instead of adding point
+            // If winner screen is showing, go to splash instead of adding point
             const winnerDisplay = document.getElementById('winnerDisplay');
             if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-                console.log('Winner screen visible - returning to splash');
-                returnToSplashScreen();
+                console.log('🏆 Winner screen visible - going to splash');
+                clearWinnerTimeout();
+                goToSplashFromWinner();
                 return;
             }
             
-            console.log('Yellow team clicked');
+            // If splash is showing, dismiss it first
+            const splashScreen = document.getElementById('splashScreen');
+            if (splashScreen && splashScreen.classList.contains('active')) {
+                dismissSplash();
+            }
+            
+            console.log('🟡 Yellow team clicked');
             addPointManual('yellow');
-            hideSplashOnFirstPoint();
         });
-        console.log('Yellow team click listener added');
+        console.log('✅ Yellow team click listener added');
     }
 }
 
-function hideSplashOnFirstPoint() {
-    const splashScreen = document.getElementById('splashScreen');
-    if (splashScreen && !splashDismissed) {
-        splashDismissed = true;
-        splashScreen.classList.remove('active');
-        console.log('Splash hidden on first point');
-    }
-}
-
-// ====================================
+// =================================================================================================
 // LOGO SETUP
-// ====================================
+// =================================================================================================
 function setupLogo() {
     const logo = document.getElementById('logoClick');
     const logoImg = document.getElementById('logoImg');
     const controlPanel = document.getElementById('controlPanel');
-    
+
     if (logoImg) {
         logoImg.onload = function() {
-            console.log('Logo image loaded');
+            console.log('✅ Logo image loaded');
             if (logo) logo.classList.remove('no-image');
         };
-        
+
         logoImg.onerror = function() {
-            console.log('Logo image failed, using fallback');
+            console.log('⚠️ Logo image failed, using fallback');
             if (logo) logo.classList.add('no-image');
         };
-        
+
         if (logoImg.complete) {
             if (logoImg.naturalWidth === 0) {
                 logoImg.onerror();
@@ -368,38 +355,41 @@ function setupLogo() {
             }
         }
     }
-    
+
     if (logo) {
-        logo.addEventListener('click', (e) => {
+        logo.addEventListener('click', function(e) {
             e.stopPropagation();
             if (controlPanel) {
                 if (controlPanel.style.display === 'none' || !controlPanel.style.display) {
                     controlPanel.style.display = 'flex';
-                    console.log('Controls shown');
+                    console.log('🎛️ Controls shown');
                 } else {
                     controlPanel.style.display = 'none';
-                    console.log('Controls hidden');
+                    console.log('🎛️ Controls hidden');
                 }
             }
         });
     }
 }
 
-// ====================================
+// =================================================================================================
 // TIME UPDATE
-// ====================================
+// =================================================================================================
 function updateTime() {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     time = `${hours}:${minutes}`;
+    
     const timeEl = document.getElementById('timeDisplay');
-    if (timeEl) timeEl.textContent = time;
+    if (timeEl) {
+        timeEl.textContent = time;
+    }
 }
 
-// ====================================
+// =================================================================================================
 // GAME STATE UPDATE FROM SOCKET.IO
-// ====================================
+// =================================================================================================
 function updateFromGameState(gameState) {
     score1 = gameState.score1;
     score2 = gameState.score2;
@@ -407,19 +397,19 @@ function updateFromGameState(gameState) {
     games2 = gameState.game2;
     sets1 = gameState.set1;
     sets2 = gameState.set2;
-    matchWon = gameState.match_won;
-    
+    matchWon = gameState.matchwon;
+
     updateDisplay();
-    
-    if (gameState.match_won && gameState.winner) {
+
+    if (gameState.matchwon && gameState.winner) {
         winnerData = gameState.winner;
         fetchMatchDataAndDisplay();
     }
-    
-    if (gameState.set_history && gameState.set_history.length > 0) {
-        setsHistory = gameState.set_history.map(setScore => {
+
+    if (gameState.sethistory && gameState.sethistory.length > 0) {
+        setsHistory = gameState.sethistory.map(setScore => {
             const [blackGames, yellowGames] = setScore.split('-').map(Number);
-            return { blackGames, yellowGames };
+            return [blackGames, yellowGames];
         });
     }
 }
@@ -431,93 +421,64 @@ function updateDisplay() {
     const gamesYellow = document.getElementById('gamesYellow');
     const setsBlackEl = document.getElementById('setsBlack');
     const setsYellowEl = document.getElementById('setsYellow');
-    
+
     if (scoreBlack) scoreBlack.textContent = score1;
     if (scoreYellow) scoreYellow.textContent = score2;
     if (gamesBlack) gamesBlack.textContent = games1;
     if (gamesYellow) gamesYellow.textContent = games2;
     if (setsBlackEl) setsBlackEl.textContent = sets1;
     if (setsYellowEl) setsYellowEl.textContent = sets2;
-    
-    console.log(`Display updated - Score: ${score1}-${score2}, Games: ${games1}-${games2}, Sets: ${sets1}-${sets2}`);
+
+    console.log(`📊 Display updated - Score: ${score1}-${score2} | Games: ${games1}-${games2} | Sets: ${sets1}-${sets2}`);
 }
 
-// ====================================
-// MANUAL POINT ADDITION (FROM CONTROLS AND TEAM CLICKS)
-// ====================================
+// =================================================================================================
+// MANUAL POINT ADDITION
+// =================================================================================================
 async function addPointManual(team) {
-    console.log(`Adding point to ${team} team`);
+    console.log(`➕ Adding point to ${team} team`);
+    
     try {
-        const response = await fetch(`${API_BASE}/add_point`, {
+        const response = await fetch(`${API_BASE}/addpoint`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team: team })
         });
-        
-        // Check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        // Check content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error('Server returned non-JSON response:', text);
-            throw new TypeError("Server didn't return JSON!");
-        }
-        
+
         const data = await response.json();
         if (data.success) {
-            console.log('Point added successfully');
+            console.log('✅ Point added successfully');
             showClickFeedback(team);
         } else {
-            console.error('Failed to add point:', data.error);
+            console.error('❌ Failed to add point:', data.error);
             alert(data.error);
         }
     } catch (error) {
-        console.error('Error adding point:', error);
-        console.error('Make sure the Flask backend is running on http://127.0.0.1:5000');
-        alert('Cannot connect to server. Make sure backend is running!');
+        console.error('❌ Error adding point:', error);
+        alert(`Network error: ${error.message}`);
     }
 }
 
 async function subtractPoint(team) {
-    console.log(`Subtracting point from ${team} team`);
+    console.log(`➖ Subtracting point from ${team} team`);
+    
     try {
-        const response = await fetch(`${API_BASE}/subtract_point`, {
+        const response = await fetch(`${API_BASE}/subtractpoint`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team: team })
         });
-        
-        // Check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        // Check content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error('Server returned non-JSON response:', text);
-            throw new TypeError("Server didn't return JSON!");
-        }
-        
+
         const data = await response.json();
         if (data.success) {
-            console.log('Point subtracted successfully');
+            console.log('✅ Point subtracted successfully');
         } else {
-            console.error('Failed to subtract point:', data.error);
+            console.error('❌ Failed to subtract point:', data.error);
             alert(data.error);
         }
     } catch (error) {
-        console.error('Error subtracting point:', error);
-        alert('Network error: ' + error.message);
+        console.error('❌ Error subtracting point:', error);
+        alert(`Network error: ${error.message}`);
     }
 }
 
@@ -531,126 +492,96 @@ function showClickFeedback(team) {
     }
 }
 
-// ====================================
+// =================================================================================================
 // WINNER DISPLAY
-// ====================================
+// =================================================================================================
 async function fetchMatchDataAndDisplay() {
     try {
-        const response = await fetch(`${API_BASE}/get_match_data`);
-        
-        // Check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        // Check content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error('Server returned non-JSON response:', text);
-            throw new TypeError("Server didn't return JSON!");
-        }
-        
+        const response = await fetch(`${API_BASE}/getmatchdata`);
         const data = await response.json();
-        if (data.success && data.match_data) {
-            displayWinnerWithData(data.match_data);
+        if (data.success && data.matchdata) {
+            displayWinnerWithData(data.matchdata);
         }
     } catch (error) {
-        console.error('Error fetching match data:', error);
+        console.error('❌ Error fetching match data:', error);
     }
 }
 
 function displayWinner(data) {
-    if (data.match_data) {
-        displayWinnerWithData(data.match_data);
+    if (data.matchdata) {
+        displayWinnerWithData(data.matchdata);
     }
 }
 
 function displayWinnerWithData(matchData) {
-    console.log('Displaying winner:', matchData);
+    console.log('🏆 Displaying winner:', matchData);
     
     const winnerDisplay = document.getElementById('winnerDisplay');
     const winnerTeamName = document.getElementById('winnerTeamName');
     const finalSetsScore = document.getElementById('finalSetsScore');
     const matchDuration = document.getElementById('matchDuration');
     const setsTableBody = document.getElementById('setsTableBody');
-    
+
     if (winnerTeamName) {
-        winnerTeamName.textContent = matchData.winner_name;
-        winnerTeamName.className = `winner-team-name ${matchData.winner_team}`;
+        winnerTeamName.textContent = matchData.winnername;
+        winnerTeamName.className = `winner-team-name ${matchData.winnerteam}`;
     }
-    
+
     if (finalSetsScore) {
-        finalSetsScore.textContent = matchData.final_sets_score;
+        finalSetsScore.textContent = matchData.finalsetsscore;
     }
-    
+
     if (matchDuration) {
-        matchDuration.textContent = matchData.match_duration;
+        matchDuration.textContent = matchData.matchduration;
     }
-    
-    if (setsTableBody && matchData.sets_breakdown) {
+
+    if (setsTableBody && matchData.setsbreakdown) {
         let tableHTML = '';
-        matchData.sets_breakdown.forEach(set => {
-            const blackClass = set.set_winner === 'black' ? 'winner-set' : '';
-            const yellowClass = set.set_winner === 'yellow' ? 'winner-set' : '';
+        matchData.setsbreakdown.forEach(set => {
+            const blackClass = set.setwinner === 'black' ? 'winner-set' : '';
+            const yellowClass = set.setwinner === 'yellow' ? 'winner-set' : '';
             tableHTML += `
                 <tr>
-                    <td>Set ${set.set_number}</td>
-                    <td class="${blackClass}">${set.black_games}</td>
-                    <td class="${yellowClass}">${set.yellow_games}</td>
-                    <td class="team-column ${set.set_winner}">${set.set_winner.toUpperCase()}</td>
+                    <td>Set ${set.setnumber}</td>
+                    <td class="${blackClass}">${set.blackgames}</td>
+                    <td class="${yellowClass}">${set.yellowgames}</td>
+                    <td class="team-column ${set.setwinner}">${set.setwinner.toUpperCase()}</td>
                 </tr>
             `;
         });
         setsTableBody.innerHTML = tableHTML;
     }
-    
+
     if (winnerDisplay) {
         winnerDisplay.style.display = 'flex';
         
-        // Clear any existing timeout
-        if (winnerScreenTimeout) {
-            clearTimeout(winnerScreenTimeout);
-        }
-        
-        // Set 30-second timeout to return to splash screen
-        winnerScreenTimeout = setTimeout(() => {
-            console.log('30 seconds elapsed - returning to splash screen');
-            returnToSplashScreen();
+        // Auto-dismiss after 30 seconds
+        clearWinnerTimeout();
+        winnerDismissTimeout = setTimeout(() => {
+            console.log('⏱️ Winner screen auto-dismiss (30s) - going to splash');
+            goToSplashFromWinner();
         }, 30000);
+        
+        console.log('🏆 Winner screen displayed with 30s auto-dismiss');
     }
 }
 
-// ====================================
-// MATCH RESET - SILENT VERSION (NO CONFIRMATION)
-// ====================================
+// =================================================================================================
+// MATCH RESET
+// =================================================================================================
 async function resetMatchSilent() {
-    console.log('Resetting match silently...');
+    console.log('🔄 Resetting match silently...');
+    
     try {
-        const response = await fetch(`${API_BASE}/reset_match`, {
+        const response = await fetch(`${API_BASE}/resetmatch`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-        
-        // Check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        // Check content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error('Server returned non-JSON response:', text);
-            throw new TypeError("Server didn't return JSON!");
-        }
-        
+
         const data = await response.json();
         if (data.success) {
-            console.log('Match reset successfully');
-            
+            console.log('✅ Match reset successfully');
+
             // Reset local variables
             score1 = 0;
             score2 = 0;
@@ -662,27 +593,25 @@ async function resetMatchSilent() {
             winnerData = null;
             setsHistory = [];
             matchStartTime = Date.now();
-            
+
+            // Clear winner timeout
+            clearWinnerTimeout();
+
             // Hide winner display
             const winnerDisplay = document.getElementById('winnerDisplay');
             if (winnerDisplay) {
                 winnerDisplay.style.display = 'none';
             }
-            
-            // Clear timeout
-            if (winnerScreenTimeout) {
-                clearTimeout(winnerScreenTimeout);
-                winnerScreenTimeout = null;
-            }
-            
+
             // Update scoreboard
             updateDisplay();
-            console.log('Ready for new match');
+            
+            console.log('✅ Ready for new match');
         } else {
-            console.error('Failed to reset match');
+            console.error('❌ Failed to reset match');
         }
     } catch (error) {
-        console.error('Error resetting match:', error);
+        console.error('❌ Error resetting match:', error);
     }
 }
 
@@ -695,7 +624,7 @@ async function resetMatch() {
 
 // Update newMatch function to use silent reset
 async function newMatch() {
-    returnToSplashScreen();
+    await resetMatchSilent();
 }
 
 function shareResults() {
