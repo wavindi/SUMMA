@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton:wght@400&display=swap');
 
 * {
     margin: 0;
@@ -27,9 +27,7 @@ body {
     position: relative;
 }
 
-/* ====================================== */
 /* Header */
-/* ====================================== */
 .header {
     background: linear-gradient(90deg, #d4af37 0%, #b8860b 100%);
     height: 80px;
@@ -102,9 +100,7 @@ body {
     100% { opacity: 1; }
 }
 
-/* ====================================== */
 /* Logo Container */
-/* ====================================== */
 .logo-container {
     display: flex;
     align-items: center;
@@ -186,9 +182,7 @@ body {
     line-height: 1.2;
 }
 
-/* ====================================== */
 /* Main Scoreboard */
-/* ====================================== */
 .main-scoreboard {
     flex: 1;
     display: flex;
@@ -197,9 +191,7 @@ body {
     transform-origin: center;
 }
 
-/* ====================================== */
 /* Team Sections */
-/* ====================================== */
 .team-section {
     flex: 1;
     display: flex;
@@ -243,7 +235,6 @@ body {
 
 .team-header {
     height: 100px;
-    display: flex;
     align-items: center;
     padding: 50px 100px;
     position: relative;
@@ -296,9 +287,7 @@ body {
     background: #d4af37;
 }
 
-/* ====================================== */
 /* Score Display with Games */
-/* ====================================== */
 .score-container {
     flex: 1;
     display: flex;
@@ -317,7 +306,7 @@ body {
     font-style: italic;
     line-height: 1;
     text-align: center;
-    text-shadow: 
+    text-shadow:
         0 0 30px rgba(0, 0, 0, 1),
         0 0 60px rgba(0, 0, 0, 0.9),
         0 0 90px rgba(0, 0, 0, 0.7),
@@ -325,6 +314,7 @@ body {
     transition: all 0.3s ease;
 }
 
+/* Team Games Score */
 .team-games {
     color: #d4af37;
     font-weight: 400;
@@ -332,7 +322,7 @@ body {
     font-style: italic;
     line-height: 1;
     text-align: center;
-    text-shadow: 
+    text-shadow:
         0 0 20px rgba(0, 0, 0, 1),
         0 0 40px rgba(0, 0, 0, 0.8),
         2px 2px 4px rgba(0, 0, 0, 1);
@@ -343,9 +333,7 @@ body {
     color: #fff;
 }
 
-/* ====================================== */
 /* VS Divider */
-/* ====================================== */
 .vs-divider {
     position: absolute;
     left: 50%;
@@ -372,9 +360,7 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* ====================================== */
-/* Sets Score Panel */
-/* ====================================== */
+/* Sets Score Panel - RED */
 .sets-score {
     position: fixed;
     left: 50%;
@@ -418,9 +404,7 @@ body {
     transition: all 0.3s ease;
 }
 
-/* ====================================== */
-/* Winner Display */
-/* ====================================== */
+/* Winner Display - BIGGER SIZE */
 .winner-display {
     position: fixed;
     top: 50%;
@@ -428,24 +412,23 @@ body {
     transform: translate(-50%, -50%);
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.96) 0%, rgba(20, 20, 20, 0.98) 100%);
     border-radius: 25px;
-    padding: 60px;
+    padding: 60px 50px;
     display: none;
     flex-direction: column;
     align-items: center;
     gap: 40px;
     backdrop-filter: blur(30px);
     border: 4px solid rgba(212, 175, 55, 0.8);
-    box-shadow: 
+    box-shadow:
         0 25px 60px rgba(0, 0, 0, 0.9),
         0 0 80px rgba(212, 175, 55, 0.3),
         inset 0 0 30px rgba(212, 175, 55, 0.1);
     z-index: 100;
     animation: winnerAppear 1.5s ease-out;
-    width: 90vw;
-    max-width: 900px;
-    max-height: 90vh;
+    width: 95vw;
+    max-width: 1200px;
+    max-height: 95vh;
     overflow-y: auto;
-    cursor: pointer;
 }
 
 @keyframes winnerAppear {
@@ -463,6 +446,7 @@ body {
     }
 }
 
+/* Winner Header Section */
 .winner-header {
     display: flex;
     flex-direction: column;
@@ -470,22 +454,18 @@ body {
     gap: 25px;
     width: 100%;
     border-bottom: 2px solid rgba(212, 175, 55, 0.3);
-    padding-bottom: 40px;
+    padding-bottom: 35px;
 }
 
 .winner-trophy {
-    font-size: 120px;
+    font-size: 140px;
     animation: trophyBounce 3s ease-in-out infinite;
     filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.9));
 }
 
 @keyframes trophyBounce {
-    0%, 100% {
-        transform: translateY(0px) scale(1) rotate(0deg);
-    }
-    50% {
-        transform: translateY(-8px) scale(1.1) rotate(5deg);
-    }
+    0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+    50% { transform: translateY(-8px) scale(1.1) rotate(5deg); }
 }
 
 .winner-title {
@@ -494,8 +474,8 @@ body {
     font-size: clamp(48px, 8vw, 80px);
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 6px;
-    text-shadow: 
+    letter-spacing: 4px;
+    text-shadow:
         0 0 50px rgba(212, 175, 55, 0.9),
         0 0 100px rgba(212, 175, 55, 0.7),
         0 6px 12px rgba(0, 0, 0, 0.8);
@@ -505,13 +485,13 @@ body {
 
 @keyframes glow {
     from {
-        text-shadow: 
+        text-shadow:
             0 0 50px rgba(212, 175, 55, 0.9),
             0 0 100px rgba(212, 175, 55, 0.7),
             0 6px 12px rgba(0, 0, 0, 0.8);
     }
     to {
-        text-shadow: 
+        text-shadow:
             0 0 80px rgba(212, 175, 55, 1),
             0 0 160px rgba(212, 175, 55, 0.9),
             0 10px 20px rgba(0, 0, 0, 0.9);
@@ -524,8 +504,8 @@ body {
     font-size: clamp(36px, 6vw, 60px);
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 4px;
-    text-shadow: 
+    letter-spacing: 3px;
+    text-shadow:
         0 0 30px rgba(255, 255, 255, 0.6),
         0 4px 8px rgba(0, 0, 0, 0.8);
     text-align: center;
@@ -547,7 +527,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 30px;
+    padding: 20px 35px;
     background: rgba(212, 175, 55, 0.1);
     border-radius: 15px;
     border: 2px solid rgba(212, 175, 55, 0.3);
@@ -556,23 +536,24 @@ body {
 
 .summary-label {
     color: #d4af37;
-    font-size: clamp(14px, 2.5vw, 18px);
+    font-size: clamp(16px, 2.5vw, 20px);
     font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .summary-value {
     color: #fff;
-    font-size: clamp(24px, 4vw, 40px);
+    font-size: clamp(28px, 4vw, 40px);
     font-weight: 400;
     font-style: italic;
 }
 
+/* Sets Table Section */
 .sets-table-section {
     width: 100%;
-    max-width: 700px;
+    max-width: 800px;
 }
 
 .table-container {
@@ -587,7 +568,7 @@ body {
 
 .table-title {
     color: #d4af37;
-    font-size: clamp(20px, 3.5vw, 28px);
+    font-size: clamp(22px, 3.5vw, 28px);
     font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -597,6 +578,7 @@ body {
     border-bottom: 2px solid rgba(212, 175, 55, 0.4);
 }
 
+/* Professional Sets Table */
 .sets-table {
     width: 100%;
     border-collapse: collapse;
@@ -610,7 +592,7 @@ body {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.8) 0%, rgba(184, 134, 11, 0.8) 100%);
     color: #000;
     font-weight: 400;
-    font-size: clamp(16px, 3vw, 20px);
+    font-size: clamp(16px, 2.8vw, 22px);
     padding: 18px 12px;
     text-align: center;
     text-transform: uppercase;
@@ -620,7 +602,7 @@ body {
 
 .sets-table td {
     color: #fff;
-    font-size: clamp(15px, 2.5vw, 19px);
+    font-size: clamp(15px, 2.5vw, 20px);
     padding: 18px 12px;
     text-align: center;
     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
@@ -638,6 +620,7 @@ body {
     background: rgba(255, 255, 255, 0.05);
 }
 
+/* Winner set highlighting */
 .sets-table td.winner-set {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(184, 134, 11, 0.3) 100%);
     color: #d4af37;
@@ -659,18 +642,21 @@ body {
     color: #d4af37;
 }
 
+/* Bottom Actions */
 .winner-actions {
     display: flex;
-    gap: 30px;
-    margin-top: 25px;
+    gap: 25px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .action-button {
-    padding: 18px 45px;
+    padding: 18px 40px;
     border: none;
     border-radius: 20px;
     font-family: 'Anton', Arial, sans-serif;
-    font-size: clamp(16px, 3vw, 22px);
+    font-size: clamp(16px, 2.8vw, 20px);
     font-style: italic;
     cursor: pointer;
     transition: all 0.4s ease;
@@ -690,13 +676,25 @@ body {
     background: linear-gradient(135deg, #f0c940 0%, #d4af37 100%);
 }
 
+.share-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 2px solid rgba(212, 175, 55, 0.7);
+    color: #d4af37;
+    backdrop-filter: blur(10px);
+}
+
+.share-btn:hover {
+    transform: scale(1.08) translateY(-3px);
+    border-color: rgba(212, 175, 55, 1);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.4);
+}
+
 .action-button:active {
     transform: scale(0.95);
 }
 
-/* ====================================== */
 /* Click Feedback */
-/* ====================================== */
 .click-feedback {
     position: absolute;
     top: 50%;
@@ -705,13 +703,14 @@ body {
     font-size: 80px;
     font-weight: 400;
     opacity: 0;
+    animation: feedbackPulse 0.8s ease-in-out;
     pointer-events: none;
     z-index: 100;
 }
 
 .black-team .click-feedback {
     color: #d4af37;
-    text-shadow: 
+    text-shadow:
         0 0 30px rgba(0, 0, 0, 1),
         0 0 60px rgba(0, 0, 0, 0.9),
         0 0 90px rgba(212, 175, 55, 0.6);
@@ -719,34 +718,20 @@ body {
 
 .yellow-team .click-feedback {
     color: #000;
-    text-shadow: 
+    text-shadow:
         0 0 30px rgba(255, 255, 255, 1),
         0 0 60px rgba(255, 255, 255, 0.9),
         0 0 90px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes feedbackPulse {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.3);
-    }
-    30% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.3);
-    }
-    70% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.1);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1);
-    }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    70% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }
 
-/* ====================================== */
 /* Control Panel */
-/* ====================================== */
 .control-panel {
     position: fixed;
     top: 50%;
@@ -788,15 +773,16 @@ body {
     transform: scale(0.95);
 }
 
-/* ====================================== */
-/* SPLASH SCREEN - FULL SCREEN GIF */
-/* ====================================== */
+/* ============================================================================
+   SPLASH SCREEN - FULL DISPLAY GIF
+   ============================================================================ */
 .splash-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
+    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -804,8 +790,6 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.5s ease;
-    background: #000;
-    cursor: pointer;
 }
 
 .splash-screen.active {
@@ -820,9 +804,219 @@ body {
     display: block;
 }
 
-/* ====================================== */
-/* TOAST NOTIFICATIONS */
-/* ====================================== */
+/* ============================================================================
+   MODE SELECTION SCREEN
+   ============================================================================ */
+.mode-selection-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('back.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.mode-selection-screen.active {
+    display: flex;
+    opacity: 1;
+}
+
+.mode-selection-screen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.mode-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+    padding: 40px;
+    max-width: 1400px;
+    width: 100%;
+}
+
+.mode-header {
+    text-align: center;
+}
+
+.mode-title {
+    color: #d4af37;
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    text-shadow:
+        0 0 50px rgba(212, 175, 55, 0.9),
+        0 0 100px rgba(212, 175, 55, 0.7),
+        0 4px 20px rgba(0, 0, 0, 0.8);
+    margin-bottom: 10px;
+}
+
+.mode-subtitle {
+    color: rgba(212, 175, 55, 0.8);
+    font-size: clamp(24px, 4vw, 48px);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.mode-options {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.mode-card {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(26, 26, 26, 0.85) 100%);
+    border: 3px solid rgba(212, 175, 55, 0.4);
+    border-radius: 25px;
+    padding: 40px 30px;
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.mode-card:hover {
+    transform: translateY(-10px) scale(1.05);
+    border-color: rgba(212, 175, 55, 0.8);
+    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+}
+
+.mode-card.mode-featured {
+    border-color: rgba(212, 175, 55, 0.8);
+    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.3);
+}
+
+.mode-card.mode-premium {
+    border-color: rgba(255, 215, 0, 0.6);
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(40, 40, 0, 0.9) 100%);
+}
+
+.mode-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.5);
+    position: relative;
+}
+
+.mode-icon.featured {
+    background: linear-gradient(135deg, #f0c940 0%, #d4af37 100%);
+    box-shadow: 0 8px 25px rgba(240, 201, 64, 0.6);
+}
+
+.mode-icon.premium {
+    background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.7);
+}
+
+.mode-number {
+    color: #000;
+    font-size: 56px;
+    font-weight: 400;
+    font-style: italic;
+}
+
+.lock-icon {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 32px;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+}
+
+.mode-name {
+    color: #d4af37;
+    font-size: 32px;
+    font-weight: 400;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.mode-switch-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 15px 20px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    width: 100%;
+}
+
+.switch-label {
+    color: rgba(212, 175, 55, 0.8);
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.switch-value {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 400;
+    font-style: italic;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.mode-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.mode-features li {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 16px;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+/* ============================================================================
+   TOAST NOTIFICATIONS
+   ============================================================================ */
 .toast-container {
     position: fixed;
     top: 100px;
@@ -841,7 +1035,7 @@ body {
     min-width: 300px;
     max-width: 400px;
     border: 2px solid rgba(212, 175, 55, 0.6);
-    box-shadow: 
+    box-shadow:
         0 8px 25px rgba(0, 0, 0, 0.6),
         0 0 40px rgba(212, 175, 55, 0.3);
     backdrop-filter: blur(15px);
@@ -855,7 +1049,7 @@ body {
 
 .toast:hover {
     transform: translateX(-5px);
-    box-shadow: 
+    box-shadow:
         0 12px 35px rgba(0, 0, 0, 0.7),
         0 0 60px rgba(212, 175, 55, 0.5);
 }
@@ -916,27 +1110,28 @@ body {
     transform: rotate(90deg);
 }
 
+/* Toast types */
 .toast.toast-point {
     border-color: rgba(100, 200, 255, 0.6);
 }
 
 .toast.toast-game {
     border-color: rgba(212, 175, 55, 0.8);
-    box-shadow: 
+    box-shadow:
         0 8px 25px rgba(0, 0, 0, 0.6),
         0 0 50px rgba(212, 175, 55, 0.5);
 }
 
 .toast.toast-set {
     border-color: rgba(255, 100, 100, 0.8);
-    box-shadow: 
+    box-shadow:
         0 8px 25px rgba(0, 0, 0, 0.6),
         0 0 60px rgba(255, 100, 100, 0.5);
 }
 
 .toast.toast-match {
     border-color: rgba(0, 255, 150, 0.8);
-    box-shadow: 
+    box-shadow:
         0 12px 40px rgba(0, 0, 0, 0.8),
         0 0 80px rgba(0, 255, 150, 0.6);
     animation: toastSlideIn 0.6s ease-out, toastPulse 2s ease-in-out infinite;
@@ -966,588 +1161,132 @@ body {
 
 @keyframes toastPulse {
     0%, 100% {
-        box-shadow: 
+        box-shadow:
             0 12px 40px rgba(0, 0, 0, 0.8),
             0 0 80px rgba(0, 255, 150, 0.6);
     }
     50% {
-        box-shadow: 
+        box-shadow:
             0 12px 40px rgba(0, 0, 0, 0.8),
             0 0 120px rgba(0, 255, 150, 0.9);
     }
 }
 
-/* ====================================== */
-/* MODE SELECTION SCREEN */
-/* ====================================== */
-.mode-selection-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-image: url('back.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    padding: 40px;
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .mode-options {
+        gap: 30px;
+    }
+    
+    .mode-card {
+        width: 300px;
+        padding: 35px 25px;
+    }
 }
 
-.mode-selection-screen::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(40, 50, 60, 0.95) 0%, rgba(30, 40, 50, 0.95) 100%);
-}
-
-.mode-selection-screen.active {
-    display: flex;
-    opacity: 1;
-}
-
-.mode-header {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    margin-bottom: 60px;
-}
-
-.mode-title {
-    color: #d4af37;
-    font-size: 80px;
-    font-weight: 400;
-    font-style: italic;
-    text-transform: uppercase;
-    letter-spacing: 8px;
-    line-height: 1;
-    text-shadow: 
-        0 0 30px rgba(212, 175, 55, 0.8),
-        0 4px 20px rgba(0, 0, 0, 0.8);
-}
-
-.mode-subtitle {
-    color: #fff;
-    font-size: 48px;
-    font-weight: 400;
-    font-style: italic;
-    text-transform: uppercase;
-    letter-spacing: 6px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-}
-
-.mode-logo-top {
-    position: absolute;
-    top: 30px;
-    right: 40px;
-    z-index: 2;
-}
-
-.altus-logo {
-    width: 120px;
-    height: auto;
-    filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.5));
-}
-
-.mode-cards-container {
-    display: flex;
-    gap: 40px;
-    justify-content: center;
-    align-items: stretch;
-    position: relative;
-    z-index: 1;
-    max-width: 1400px;
-    width: 100%;
-}
-
-.mode-card {
-    flex: 1;
-    max-width: 450px;
-    min-height: 520px;
-    border-radius: 30px;
-    padding: 50px 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.4s ease;
-    position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-.mode-card:hover {
-    transform: translateY(-10px) scale(1.03);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-}
-
-.mode-card:active {
-    transform: translateY(-5px) scale(1.01);
-}
-
-.mode-basic,
-.mode-competition {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
-}
-
-.mode-tournament {
-    background: linear-gradient(135deg, #888 0%, #666 100%);
-    cursor: not-allowed;
-}
-
-.mode-tournament:hover {
-    transform: none;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-.mode-icon {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 30px;
-    color: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mode-icon svg {
-    width: 100%;
-    height: 100%;
-}
-
-.mode-tournament .mode-icon {
-    color: #000;
-}
-
-.padel-racket-icon {
-    width: 90px;
-    height: 120px;
-}
-
-.trophy-icon {
-    width: 100px;
-    height: 100px;
-}
-
-.podium-icon {
-    width: 100px;
-    height: 100px;
-}
-
-.mode-name {
-    color: #fff;
-    font-size: 48px;
-    font-weight: 400;
-    font-style: italic;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin-bottom: 30px;
-    text-align: center;
-}
-
-.mode-tournament .mode-name {
-    color: #fff;
-}
-
-.mode-description {
-    color: #000;
-    font-size: 20px;
-    font-weight: 400;
-    font-style: italic;
-    text-align: center;
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.mode-desc-line {
-    display: block;
-}
-
-.highlight-gold {
-    color: #000;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.mode-locked-text {
-    color: #000;
-    font-size: 18px;
-}
-
-.locked-title {
-    color: #fff;
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-}
-
-.highlight-white {
-    color: #000;
-    font-weight: 400;
-}
-
-.lock-icon {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    color: #000;
-    opacity: 0.95;
-}
-
-/* ====================================== */
-/* RESPONSIVE DESIGN */
-/* ====================================== */
 @media (max-width: 900px) {
     .winner-display {
         width: 95vw;
         padding: 40px 30px;
         gap: 30px;
     }
-    
-    .winner-trophy {
-        font-size: 90px;
-    }
+
+    .winner-trophy { font-size: 100px; }
     
     .match-summary {
-        gap: 25px;
+        gap: 30px;
     }
-    
+
     .summary-item {
         padding: 15px 25px;
     }
-    
+
     .winner-actions {
         flex-direction: column;
-        gap: 20px;
+        gap: 15px;
         width: 100%;
     }
-    
+
     .action-button {
         padding: 15px 30px;
         width: 100%;
     }
+    
+    .mode-options {
+        gap: 25px;
+    }
+    
+    .mode-card {
+        width: 280px;
+    }
 }
 
 @media (max-width: 800px) {
-    .header {
-        height: 60px;
-        padding: 0 20px;
-    }
-    
-    .time-display {
-        font-size: 24px;
-    }
-    
-    .score-main {
-        font-size: clamp(60px, 8vw, 120px);
-    }
-    
-    .team-games {
-        font-size: clamp(20px, 2.5vw, 40px);
-    }
-    
-    .vs-divider {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .vs-text {
-        font-size: 20px;
-    }
-    
-    .sets-score {
-        bottom: 20px;
-        padding: 15px 25px;
-    }
-    
-    .sets-score-number {
-        font-size: 28px;
-    }
-    
-    .team-header {
-        padding: 30px 30px;
-    }
-    
-    .team-label {
-        min-width: 200px;
-        padding: 10px 30px;
-    }
-    
-    .team-name {
-        font-size: 20px;
-    }
-    
-    .control-panel {
-        right: 10px;
-    }
-    
-    .logo {
-        width: 45px;
-        height: 45px;
-    }
-    
     .toast-container {
         top: 70px;
         right: 10px;
         left: 10px;
     }
-    
+
     .toast {
         min-width: unset;
         max-width: 100%;
         padding: 15px 20px;
     }
-    
+
     .toast-icon {
         font-size: 28px;
     }
-    
+
     .toast-title {
         font-size: 16px;
     }
-    
+
     .toast-message {
         font-size: 13px;
-    }
-    
-    .mode-selection-screen {
-        padding: 20px;
-    }
-    
-    .mode-header {
-        margin-bottom: 30px;
-    }
-    
-    .mode-title {
-        font-size: 42px;
-        letter-spacing: 4px;
-    }
-    
-    .mode-subtitle {
-        font-size: 24px;
-    }
-    
-    .mode-logo-top {
-        top: 15px;
-        right: 15px;
-    }
-    
-    .altus-logo {
-        width: 80px;
-    }
-    
-    .mode-card {
-        padding: 30px 25px;
-    }
-    
-    .mode-icon {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .mode-name {
-        font-size: 32px;
-    }
-    
-    .mode-description {
-        font-size: 14px;
-    }
-    
-    .lock-icon svg {
-        width: 50px;
-        height: 50px;
     }
 }
 
 @media (max-width: 600px) {
-    .header {
-        padding: 0 15px;
-    }
-    
-    .tournament-title {
-        font-size: 14px;
-    }
-    
-    .time-display {
-        font-size: 20px;
-    }
-    
-    .score-main {
-        font-size: clamp(40px, 6vw, 80px);
-    }
-    
-    .team-games {
-        font-size: clamp(15px, 2vw, 30px);
-    }
-    
-    .team-header {
-        padding: 0 20px;
-    }
-    
-    .team-label {
-        min-width: 150px;
-        padding: 8px 20px;
-    }
-    
-    .team-name {
-        font-size: 16px;
-    }
-    
-    .logo {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .logo-text {
-        font-size: 12px;
-    }
-    
-    .logo-container {
-        gap: 10px;
-        padding: 8px 15px;
-    }
-    
     .winner-display {
-        padding: 30px 20px;
+        padding: 30px 25px;
         gap: 25px;
     }
-    
-    .winner-trophy {
-        font-size: 70px;
-    }
+
+    .winner-trophy { font-size: 80px; }
     
     .match-summary {
         gap: 20px;
     }
-    
+
     .summary-item {
         padding: 12px 20px;
     }
-    
+
     .table-container {
         padding: 25px 20px;
     }
-    
+
     .sets-table th,
     .sets-table td {
         padding: 15px 10px;
-        font-size: clamp(12px, 3vw, 17px);
+        font-size: clamp(13px, 3vw, 18px);
     }
     
-    .mode-title {
-        font-size: 32px;
-    }
-    
-    .mode-subtitle {
-        font-size: 20px;
-    }
-    
-    .mode-name {
-        font-size: 28px;
-    }
-    
-    .mode-description {
-        font-size: 13px;
-    }
-}
-
-@media (max-width: 1200px) {
-    .mode-cards-container {
-        flex-direction: column;
-        gap: 25px;
-        max-width: 500px;
+    .mode-container {
+        gap: 40px;
+        padding: 30px 20px;
     }
     
     .mode-card {
-        max-width: 100%;
-        min-height: auto;
-        padding: 35px 30px;
-    }
-    
-    .mode-header {
-        margin-bottom: 40px;
-    }
-    
-    .mode-title {
-        font-size: 56px;
-    }
-    
-    .mode-subtitle {
-        font-size: 32px;
-    }
-    
-    .mode-icon {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 20px;
-    }
-    
-    .mode-name {
-        font-size: 36px;
-        margin-bottom: 20px;
-    }
-    
-    .mode-description {
-        font-size: 16px;
-    }
-    
-    .altus-logo {
-        width: 100px;
+        width: 100%;
+        max-width: 320px;
     }
 }
 
+/* Standard Responsive Design */
 @media (max-width: 1400px) {
-    .score-main {
-        font-size: clamp(100px, 12vw, 220px);
-    }
-    
-    .team-games {
-        font-size: clamp(30px, 4vw, 60px);
-    }
-    
-    .vs-divider {
-        width: 100px;
-        height: 100px;
-    }
-    
-    .vs-text {
-        font-size: 30px;
-    }
-    
-    .mode-cards-container {
-        gap: 30px;
-    }
-    
-    .mode-card {
-        max-width: 380px;
-        min-height: 480px;
-        padding: 40px 30px;
-    }
-    
-    .mode-title {
-        font-size: 64px;
-    }
-    
-    .mode-subtitle {
-        font-size: 40px;
-    }
-    
-    .mode-name {
-        font-size: 40px;
-    }
-    
-    .mode-description {
-        font-size: 18px;
-    }
+    .score-main { font-size: clamp(100px, 12vw, 220px); }
+    .team-games { font-size: clamp(30px, 4vw, 60px); }
+    .vs-divider { width: 100px; height: 100px; }
 }
