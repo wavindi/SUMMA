@@ -25,12 +25,12 @@ socket.on('gamestateupdate', (data) => {
 socket.on('pointscored', (data) => {
     console.log('🎯 Point scored:', data);
     
-    // If winner screen is showing, dismiss it and go to splash
+    // If winner screen is showing, reset match and go to splash
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-        console.log('🏆 Winner screen visible - going to splash on sensor point');
+        console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
         clearWinnerTimeout();
-        goToSplashFromWinner();
+        resetMatchAndGoToSplash();
         return;
     }
     
@@ -172,9 +172,9 @@ function setupWinnerScreenClickDismiss() {
             
             // Only close if the winner screen is actually visible
             if (winnerDisplay.style.display === 'flex') {
-                console.log('👆 Winner screen clicked - going to splash');
+                console.log('👆 Winner screen clicked - resetting match and going to splash');
                 clearWinnerTimeout();
-                goToSplashFromWinner();
+                resetMatchAndGoToSplash();
             }
         });
         
@@ -189,12 +189,46 @@ function clearWinnerTimeout() {
     }
 }
 
-function goToSplashFromWinner() {
+async function resetMatchAndGoToSplash() {
+    console.log('🔄 Resetting match and going to splash...');
+    
+    // Reset match on backend
+    try {
+        const response = await fetch(`${API_BASE}/resetmatch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            console.log('✅ Match reset successfully on backend');
+        } else {
+            console.error('❌ Failed to reset match on backend');
+        }
+    } catch (error) {
+        console.error('❌ Error resetting match:', error);
+    }
+    
+    // Reset local variables
+    score1 = 0;
+    score2 = 0;
+    games1 = 0;
+    games2 = 0;
+    sets1 = 0;
+    sets2 = 0;
+    matchWon = false;
+    winnerData = null;
+    setsHistory = [];
+    matchStartTime = Date.now();
+    
     // Hide winner display
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
         winnerDisplay.style.display = 'none';
     }
+    
+    // Update scoreboard display
+    updateDisplay();
     
     // Reset splash dismissed flag
     splashDismissed = false;
@@ -203,7 +237,7 @@ function goToSplashFromWinner() {
     const splashScreen = document.getElementById('splashScreen');
     if (splashScreen) {
         splashScreen.classList.add('active');
-        console.log('🎬 Splash screen displayed after winner');
+        console.log('🎬 Match reset complete - splash screen displayed');
     }
 }
 
@@ -280,12 +314,12 @@ function setupClickableTeams() {
         blackTeam.addEventListener('click', function(e) {
             if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) return;
             
-            // If winner screen is showing, go to splash instead of adding point
+            // If winner screen is showing, reset match and go to splash
             const winnerDisplay = document.getElementById('winnerDisplay');
             if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-                console.log('🏆 Winner screen visible - going to splash');
+                console.log('🏆 Winner screen visible - black side clicked, resetting match and going to splash');
                 clearWinnerTimeout();
-                goToSplashFromWinner();
+                resetMatchAndGoToSplash();
                 return;
             }
             
@@ -306,12 +340,12 @@ function setupClickableTeams() {
         yellowTeam.addEventListener('click', function(e) {
             if (e.target.closest('#controlPanel')) return;
             
-            // If winner screen is showing, go to splash instead of adding point
+            // If winner screen is showing, reset match and go to splash
             const winnerDisplay = document.getElementById('winnerDisplay');
             if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-                console.log('🏆 Winner screen visible - going to splash');
+                console.log('🏆 Winner screen visible - yellow side clicked, resetting match and going to splash');
                 clearWinnerTimeout();
-                goToSplashFromWinner();
+                resetMatchAndGoToSplash();
                 return;
             }
             
@@ -555,11 +589,11 @@ function displayWinnerWithData(matchData) {
     if (winnerDisplay) {
         winnerDisplay.style.display = 'flex';
         
-        // Auto-dismiss after 30 seconds
+        // Auto-dismiss after 30 seconds - reset match and go to splash
         clearWinnerTimeout();
         winnerDismissTimeout = setTimeout(() => {
-            console.log('⏱️ Winner screen auto-dismiss (30s) - going to splash');
-            goToSplashFromWinner();
+            console.log('⏱️ Winner screen auto-dismiss (30s) - resetting match and going to splash');
+            resetMatchAndGoToSplash();
         }, 30000);
         
         console.log('🏆 Winner screen displayed with 30s auto-dismiss');
@@ -569,62 +603,15 @@ function displayWinnerWithData(matchData) {
 // =================================================================================================
 // MATCH RESET
 // =================================================================================================
-async function resetMatchSilent() {
-    console.log('🔄 Resetting match silently...');
-    
-    try {
-        const response = await fetch(`${API_BASE}/resetmatch`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            console.log('✅ Match reset successfully');
-
-            // Reset local variables
-            score1 = 0;
-            score2 = 0;
-            games1 = 0;
-            games2 = 0;
-            sets1 = 0;
-            sets2 = 0;
-            matchWon = false;
-            winnerData = null;
-            setsHistory = [];
-            matchStartTime = Date.now();
-
-            // Clear winner timeout
-            clearWinnerTimeout();
-
-            // Hide winner display
-            const winnerDisplay = document.getElementById('winnerDisplay');
-            if (winnerDisplay) {
-                winnerDisplay.style.display = 'none';
-            }
-
-            // Update scoreboard
-            updateDisplay();
-            
-            console.log('✅ Ready for new match');
-        } else {
-            console.error('❌ Failed to reset match');
-        }
-    } catch (error) {
-        console.error('❌ Error resetting match:', error);
-    }
-}
-
-// Keep the original reset function for manual control panel use
 async function resetMatch() {
-    if (confirm('Reset current match? All scores will be cleared.')) {
-        await resetMatchSilent();
-    }
+    console.log('🔄 Reset button clicked - resetting match and going to splash...');
+    await resetMatchAndGoToSplash();
 }
 
-// Update newMatch function to use silent reset
+// Update newMatch function to also reset and go to splash
 async function newMatch() {
-    await resetMatchSilent();
+    console.log('🆕 New match button clicked - resetting match and going to splash...');
+    await resetMatchAndGoToSplash();
 }
 
 function shareResults() {
