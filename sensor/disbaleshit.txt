@@ -1,0 +1,49 @@
+# === PRINTING SERVICES (Not needed) ===
+sudo systemctl disable cups.path
+sudo systemctl disable cups.service
+sudo systemctl disable cups.socket
+sudo systemctl disable cups-browsed.service
+sudo systemctl mask cups.service cups-browsed.service
+
+# === CLOUD-INIT (Only for cloud VMs - not needed on Pi) ===
+sudo systemctl disable cloud-config.service
+sudo systemctl disable cloud-final.service
+sudo systemctl disable cloud-init-local.service
+sudo systemctl disable cloud-init-main.service
+sudo systemctl disable cloud-init-network.service
+sudo systemctl disable cloud-init-hotplugd.socket
+
+# === NETWORK DISCOVERY (Not needed for your app) ===
+sudo systemctl disable avahi-daemon.service
+sudo systemctl disable avahi-daemon.socket
+
+# === MODEM MANAGER (Not needed unless using 4G/5G modem) ===
+sudo systemctl disable ModemManager.service
+
+# === AUTOMATIC UPDATES (Can update manually) ===
+sudo systemctl disable apt-daily.timer
+sudo systemctl disable apt-daily-upgrade.timer
+
+# === MANUAL PAGE INDEXING (Not needed) ===
+sudo systemctl disable man-db.timer
+
+# === NFS/NETWORK FILE SYSTEM (Not needed) ===
+sudo systemctl disable nfs-blkmap.service
+sudo systemctl disable rpcbind.service
+sudo systemctl disable rpcbind.socket
+sudo systemctl disable nfs-client.target
+sudo systemctl disable remote-fs.target
+
+# === DISK MANAGEMENT (Not needed for embedded app) ===
+sudo systemctl disable udisks2.service
+
+# === FILESYSTEM SCRUBBING (Not critical) ===
+sudo systemctl disable e2scrub_all.timer
+sudo systemctl disable e2scrub_reap.service
+
+# === VNC (Disable if you don't use remote desktop) ===
+sudo systemctl disable wayvnc-control.service
+
+# === ACCESS POINT / DNS SERVER (Disable if you're connecting to WiFi, not hosting it) ===
+sudo systemctl disable hostapd.service
+sudo systemctl disable dnsmasq.service
