@@ -25,9 +25,9 @@ from vl53l5cx_ctypes import VL53L5CX
 # ============================================================================
 
 SERVER_URL = 'http://localhost:5000'
-ADD_POINT_URL = f'{SERVER_URL}/add_point'
-SUBTRACT_POINT_URL = f'{SERVER_URL}/subtract_point'
-RESET_MATCH_URL = f'{SERVER_URL}/reset_match'
+ADD_POINT_URL = f'{SERVER_URL}/addpoint'
+SUBTRACT_POINT_URL = f'{SERVER_URL}/subtractpoint'
+RESET_MATCH_URL = f'{SERVER_URL}/resetmatch'
 
 UART_PORT = '/dev/serial0'
 UART_BAUD = 57600
