@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton:wght@400&display=swap');
-
 * {
     margin: 0;
     padding: 0;
@@ -16,7 +14,7 @@
 }
 
 body {
-    font-family: 'Anton', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-style: italic;
     background-image: url('back.png');
     background-size: cover;
@@ -91,21 +89,6 @@ body {
     height: 12px;
     background: #ff0000;
     border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-.live-text {
-    color: #000;
-    font-weight: 400;
-    font-size: 16px;
-    font-style: italic;
-    letter-spacing: 1px;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
 }
 
 /* Logo Container */
@@ -175,14 +158,14 @@ body {
     line-height: 1.2;
 }
 
-/* Main Scoreboard - NO SKEW, NO ANIMATIONS */
+/* Main Scoreboard */
 .main-scoreboard {
     flex: 1;
     display: flex;
     position: relative;
 }
 
-/* Team Sections - NO TRANSFORMS, NO HOVER EFFECTS */
+/* Team Sections */
 .team-section {
     flex: 1;
     display: flex;
@@ -251,7 +234,7 @@ body {
     background: var(--gold);
 }
 
-/* Score Display - NO SHADOWS, NO TRANSITIONS */
+/* Score Display */
 .score-container {
     flex: 1;
     display: flex;
@@ -285,7 +268,7 @@ body {
     color: var(--white);
 }
 
-/* VS Divider - NO SHADOWS, NO BACKDROP */
+/* VS Divider */
 .vs-divider {
     position: absolute;
     left: 50%;
@@ -309,7 +292,7 @@ body {
     font-style: italic;
 }
 
-/* Sets Score Panel - NO BACKDROP, NO SHADOWS */
+/* Sets Score Panel */
 .sets-score {
     position: fixed;
     left: 50%;
@@ -348,7 +331,7 @@ body {
     font-style: italic;
 }
 
-/* WINNER SCREEN - KEEP ALL ANIMATIONS/SHADOWS */
+/* WINNER SCREEN - NO ANIMATIONS */
 .winner-display {
     position: fixed;
     top: 50%;
@@ -361,30 +344,12 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 40px;
-    backdrop-filter: blur(30px);
     border: 4px solid rgba(212, 175, 55, 0.8);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 80px rgba(212, 175, 55, 0.3), inset 0 0 30px rgba(212, 175, 55, 0.1);
     z-index: 100;
-    animation: winnerAppear 1.5s ease-out;
     width: 95vw;
     max-width: 1200px;
     max-height: 95vh;
     overflow-y: auto;
-}
-
-@keyframes winnerAppear {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.2) rotate(-15deg);
-    }
-    70% {
-        opacity: 0.9;
-        transform: translate(-50%, -50%) scale(1.05) rotate(3deg);
-    }
-    100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
-    }
 }
 
 .winner-header {
@@ -399,17 +364,6 @@ body {
 
 .winner-trophy {
     font-size: 140px;
-    animation: trophyBounce 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.9));
-}
-
-@keyframes trophyBounce {
-    0%, 100% {
-        transform: translateY(0px) scale(1) rotate(0deg);
-    }
-    50% {
-        transform: translateY(-8px) scale(1.1) rotate(5deg);
-    }
 }
 
 .winner-title {
@@ -419,18 +373,7 @@ body {
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 4px;
-    text-shadow: 0 0 50px rgba(212, 175, 55, 0.9), 0 0 100px rgba(212, 175, 55, 0.7), 0 6px 12px rgba(0, 0, 0, 0.8);
-    animation: glow 3s ease-in-out infinite alternate;
     text-align: center;
-}
-
-@keyframes glow {
-    from {
-        text-shadow: 0 0 50px rgba(212, 175, 55, 0.9), 0 0 100px rgba(212, 175, 55, 0.7), 0 6px 12px rgba(0, 0, 0, 0.8);
-    }
-    to {
-        text-shadow: 0 0 80px rgba(212, 175, 55, 1), 0 0 160px rgba(212, 175, 55, 0.9), 0 10px 20px rgba(0, 0, 0, 0.9);
-    }
 }
 
 .winner-team-name {
@@ -440,12 +383,7 @@ body {
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 3px;
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 4px 8px rgba(0, 0, 0, 0.8);
     text-align: center;
-    background: linear-gradient(45deg, #fff 0%, var(--gold) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .match-summary {
@@ -464,7 +402,6 @@ body {
     background: rgba(212, 175, 55, 0.1);
     border-radius: 15px;
     border: 2px solid rgba(212, 175, 55, 0.3);
-    backdrop-filter: blur(10px);
 }
 
 .summary-label {
@@ -494,7 +431,6 @@ body {
     border-radius: 20px;
     border: 2px solid rgba(212, 175, 55, 0.3);
     padding: 30px;
-    backdrop-filter: blur(15px);
     display: flex;
     flex-direction: column;
 }
@@ -579,14 +515,12 @@ body {
     padding: 18px 40px;
     border: none;
     border-radius: 20px;
-    font-family: 'Anton', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-size: clamp(16px, 2.8vw, 20px);
     font-style: italic;
     cursor: pointer;
-    transition: all 0.4s ease;
     text-transform: uppercase;
     letter-spacing: 2px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .new-match-btn {
@@ -594,36 +528,13 @@ body {
     color: #000;
 }
 
-.new-match-btn:hover {
-    transform: scale(1.08) translateY(-3px);
-    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6);
-    background: linear-gradient(135deg, #f0c940 0%, var(--gold) 100%);
-}
-
 .share-btn {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
     border: 2px solid rgba(212, 175, 55, 0.7);
     color: var(--gold);
-    backdrop-filter: blur(10px);
 }
 
-.share-btn:hover {
-    transform: scale(1.08) translateY(-3px);
-    border-color: rgba(212, 175, 55, 1);
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
-    box-shadow: 0 12px 35px rgba(212, 175, 55, 0.4);
-}
-
-.action-button:active {
-    transform: scale(0.95);
-}
-
-/* Click Feedback - REMOVED */
-.click-feedback {
-    display: none;
-}
-
-/* CONTROL PANEL - KEEP ANIMATIONS */
+/* CONTROL PANEL - NO ANIMATIONS */
 .control-panel {
     position: fixed;
     top: 50%;
@@ -635,9 +546,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    backdrop-filter: blur(15px);
     border: 2px solid rgba(212, 175, 55, 0.6);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
     z-index: 25;
 }
 
@@ -647,25 +556,15 @@ body {
     border-radius: 8px;
     padding: 8px 12px;
     color: #000;
-    font-family: 'Anton', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 12px;
     font-style: italic;
     cursor: pointer;
-    transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-.control-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
-}
-
-.control-btn:active {
-    transform: scale(0.95);
-}
-
-/* SPLASH SCREEN */
+/* SPLASH SCREEN - NO ANIMATIONS */
 .splash-screen {
     position: fixed;
     top: 0;
@@ -679,7 +578,6 @@ body {
     z-index: 10000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease;
 }
 
 .splash-screen.active {
@@ -698,7 +596,7 @@ body {
     pointer-events: none;
 }
 
-/* MODE SELECTION SCREEN */
+/* MODE SELECTION SCREEN - NO ANIMATIONS */
 .mode-selection-screen {
     position: fixed;
     top: 0;
@@ -715,7 +613,6 @@ body {
     justify-content: center;
     z-index: 9999;
     opacity: 0;
-    transition: opacity 0.5s ease;
     padding: 40px;
 }
 
@@ -749,7 +646,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 8px;
     line-height: 1;
-    text-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 4px 20px rgba(0, 0, 0, 0.8);
 }
 
 .mode-subtitle {
@@ -759,7 +655,6 @@ body {
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 6px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
 
 .mode-logo-top {
@@ -772,7 +667,6 @@ body {
 .altus-logo {
     width: 120px;
     height: auto;
-    filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.5));
 }
 
 .mode-cards-container {
@@ -797,7 +691,6 @@ body {
     align-items: center;
     cursor: pointer;
     position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 .mode-basic, .mode-competition {
@@ -893,7 +786,7 @@ body {
     opacity: 0.95;
 }
 
-/* TOAST NOTIFICATIONS - KEEP ALL ANIMATIONS */
+/* TOAST NOTIFICATIONS - NO ANIMATIONS */
 .toast-container {
     position: fixed;
     top: 100px;
@@ -912,28 +805,14 @@ body {
     min-width: 300px;
     max-width: 400px;
     border: 2px solid rgba(212, 175, 55, 0.6);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 40px rgba(212, 175, 55, 0.3);
-    backdrop-filter: blur(15px);
     display: flex;
     align-items: center;
     gap: 15px;
-    animation: toastSlideIn 0.4s ease-out;
     pointer-events: all;
-    transition: all 0.3s ease;
-}
-
-.toast:hover {
-    transform: translateX(-5px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 60px rgba(212, 175, 55, 0.5);
-}
-
-.toast.toast-out {
-    animation: toastSlideOut 0.4s ease-in forwards;
 }
 
 .toast-icon {
     font-size: 32px;
-    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.6));
     flex-shrink: 0;
 }
 
@@ -973,14 +852,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
     flex-shrink: 0;
-}
-
-.toast-close:hover {
-    background: rgba(212, 175, 55, 0.3);
-    border-color: rgba(212, 175, 55, 0.8);
-    transform: rotate(90deg);
 }
 
 /* Toast types */
@@ -990,49 +862,14 @@ body {
 
 .toast.toast-game {
     border-color: rgba(212, 175, 55, 0.8);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 50px rgba(212, 175, 55, 0.5);
 }
 
 .toast.toast-set {
     border-color: rgba(255, 100, 100, 0.8);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 60px rgba(255, 100, 100, 0.5);
 }
 
 .toast.toast-match {
     border-color: rgba(0, 255, 150, 0.8);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0, 255, 150, 0.6);
-    animation: toastSlideIn 0.6s ease-out, toastPulse 2s ease-in-out infinite;
-}
-
-@keyframes toastSlideIn {
-    0% {
-        opacity: 0;
-        transform: translateX(400px) scale(0.8);
-    }
-    100% {
-        opacity: 1;
-        transform: translateX(0) scale(1);
-    }
-}
-
-@keyframes toastSlideOut {
-    0% {
-        opacity: 1;
-        transform: translateX(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateX(400px) scale(0.8);
-    }
-}
-
-@keyframes toastPulse {
-    0%, 100% {
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0, 255, 150, 0.6);
-    }
-    50% {
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 120px rgba(0, 255, 150, 0.9);
-    }
 }
 
 /* Responsive Design */
