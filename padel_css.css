@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'Anton';
+    src: url('Anton-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -14,7 +22,7 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Anton', Arial, sans-serif;
     font-style: italic;
     background-image: url('back.png');
     background-size: cover;
@@ -331,7 +339,7 @@ body {
     font-style: italic;
 }
 
-/* WINNER SCREEN - NO ANIMATIONS */
+/* WINNER SCREEN */
 .winner-display {
     position: fixed;
     top: 50%;
@@ -515,7 +523,7 @@ body {
     padding: 18px 40px;
     border: none;
     border-radius: 20px;
-    font-family: Arial, sans-serif;
+    font-family: 'Anton', Arial, sans-serif;
     font-size: clamp(16px, 2.8vw, 20px);
     font-style: italic;
     cursor: pointer;
@@ -534,7 +542,7 @@ body {
     color: var(--gold);
 }
 
-/* CONTROL PANEL - NO ANIMATIONS */
+/* CONTROL PANEL */
 .control-panel {
     position: fixed;
     top: 50%;
@@ -556,7 +564,7 @@ body {
     border-radius: 8px;
     padding: 8px 12px;
     color: #000;
-    font-family: Arial, sans-serif;
+    font-family: 'Anton', Arial, sans-serif;
     font-size: 12px;
     font-style: italic;
     cursor: pointer;
@@ -564,7 +572,7 @@ body {
     letter-spacing: 1px;
 }
 
-/* SPLASH SCREEN - NO ANIMATIONS */
+/* SPLASH SCREEN */
 .splash-screen {
     position: fixed;
     top: 0;
@@ -596,7 +604,7 @@ body {
     pointer-events: none;
 }
 
-/* MODE SELECTION SCREEN - NO ANIMATIONS */
+/* MODE SELECTION SCREEN */
 .mode-selection-screen {
     position: fixed;
     top: 0;
@@ -786,7 +794,7 @@ body {
     opacity: 0.95;
 }
 
-/* TOAST NOTIFICATIONS - NO ANIMATIONS */
+/* TOAST NOTIFICATIONS */
 .toast-container {
     position: fixed;
     top: 100px;
