@@ -804,6 +804,8 @@ body {
     display: block;
 }
 
+.splash-screen video { pointer-events: none; }
+
 /* ============================================================================
    MODE SELECTION SCREEN - ORIGINAL DESIGN
    ============================================================================ */
