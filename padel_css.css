@@ -6,6 +6,15 @@
     box-sizing: border-box;
 }
 
+:root {
+    --gold: #d4af37;
+    --gold-dark: #b8860b;
+    --black: #1a1a1a;
+    --dark: #2c2c2c;
+    --white: #fff;
+    --red: #ff0000;
+}
+
 body {
     font-family: 'Anton', Arial, sans-serif;
     font-style: italic;
@@ -16,7 +25,7 @@ body {
     background-attachment: fixed;
     overflow: hidden;
     height: 100vh;
-    background-color: #1a1a1a;
+    background-color: var(--black);
 }
 
 .scoreboard {
@@ -29,7 +38,7 @@ body {
 
 /* Header */
 .header {
-    background: linear-gradient(90deg, #d4af37 0%, #b8860b 100%);
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-dark) 100%);
     height: 80px;
     display: flex;
     align-items: center;
@@ -37,7 +46,6 @@ body {
     padding: 0 40px;
     position: relative;
     z-index: 30;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .tournament-info {
@@ -108,8 +116,6 @@ body {
     background: rgba(0, 0, 0, 0.15);
     padding: 8px 20px;
     border-radius: 25px;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .logo {
@@ -119,12 +125,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
     border: 3px solid rgba(0, 0, 0, 0.1);
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
 }
 
 .logo-img {
@@ -133,7 +137,6 @@ body {
     object-fit: cover;
     border-radius: 50%;
     display: block;
-    transition: opacity 0.3s ease;
 }
 
 .logo-fallback {
@@ -147,12 +150,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #d4af37;
+    color: var(--gold);
     font-weight: 400;
     font-size: 20px;
     font-style: italic;
     opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .logo.no-image .logo-fallback {
@@ -161,15 +163,6 @@ body {
 
 .logo.no-image .logo-img {
     opacity: 0;
-}
-
-.logo:hover {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-}
-
-.logo:active {
-    transform: scale(0.95);
 }
 
 .logo-text {
@@ -182,25 +175,20 @@ body {
     line-height: 1.2;
 }
 
-/* Main Scoreboard */
+/* Main Scoreboard - NO SKEW, NO ANIMATIONS */
 .main-scoreboard {
     flex: 1;
     display: flex;
     position: relative;
-    transform: skewX(-45deg);
-    transform-origin: center;
 }
 
-/* Team Sections */
+/* Team Sections - NO TRANSFORMS, NO HOVER EFFECTS */
 .team-section {
     flex: 1;
     display: flex;
     flex-direction: column;
-    position: relative;
-    transform: skewX(45deg);
     cursor: pointer;
     user-select: none;
-    transition: all 0.3s ease;
 }
 
 .black-team {
@@ -208,29 +196,9 @@ body {
     border-right: 2px solid rgba(212, 175, 55, 0.3);
 }
 
-.black-team:hover {
-    background: linear-gradient(135deg, rgba(60, 60, 60, 0.35) 0%, rgba(42, 42, 42, 0.35) 100%);
-    transform: skewX(45deg) scale(1.02);
-}
-
-.black-team:active {
-    background: linear-gradient(135deg, rgba(76, 76, 76, 0.45) 0%, rgba(58, 58, 58, 0.45) 100%);
-    transform: skewX(45deg) scale(0.98);
-}
-
 .yellow-team {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(184, 134, 11, 0.25) 100%);
     border-left: 2px solid rgba(44, 44, 44, 0.3);
-}
-
-.yellow-team:hover {
-    background: linear-gradient(135deg, rgba(228, 191, 71, 0.35) 0%, rgba(200, 150, 11, 0.35) 100%);
-    transform: skewX(45deg) scale(1.02);
-}
-
-.yellow-team:active {
-    background: linear-gradient(135deg, rgba(244, 207, 87, 0.45) 0%, rgba(216, 166, 11, 0.45) 100%);
-    transform: skewX(45deg) scale(0.98);
 }
 
 .team-header {
@@ -248,15 +216,12 @@ body {
     padding: 15px 40px;
     clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 100%, 0 100%);
     min-width: 250px;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .yellow-team .team-label {
     background: rgba(44, 44, 44, 0.9);
     clip-path: polygon(30px 0, 100% 0, 100% 100%, 0 100%);
     flex-direction: row-reverse;
-    backdrop-filter: blur(5px);
 }
 
 .team-name {
@@ -269,14 +234,13 @@ body {
 }
 
 .yellow-team .team-name {
-    color: #d4af37;
+    color: var(--gold);
 }
 
 .team-circle {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .black-circle {
@@ -284,10 +248,10 @@ body {
 }
 
 .yellow-circle {
-    background: #d4af37;
+    background: var(--gold);
 }
 
-/* Score Display with Games */
+/* Score Display - NO SHADOWS, NO TRANSITIONS */
 .score-container {
     flex: 1;
     display: flex;
@@ -300,45 +264,33 @@ body {
 }
 
 .score-main {
-    color: #fff;
+    color: var(--white);
     font-weight: 400;
     font-size: clamp(120px, 20vw, 280px);
     font-style: italic;
     line-height: 1;
     text-align: center;
-    text-shadow:
-        0 0 30px rgba(0, 0, 0, 1),
-        0 0 60px rgba(0, 0, 0, 0.9),
-        0 0 90px rgba(0, 0, 0, 0.7),
-        3px 3px 6px rgba(0, 0, 0, 1);
-    transition: all 0.3s ease;
 }
 
-/* Team Games Score */
 .team-games {
-    color: #d4af37;
+    color: var(--gold);
     font-weight: 400;
     font-size: clamp(40px, 10vw, 80px);
     font-style: italic;
     line-height: 1;
     text-align: center;
-    text-shadow:
-        0 0 20px rgba(0, 0, 0, 1),
-        0 0 40px rgba(0, 0, 0, 0.8),
-        2px 2px 4px rgba(0, 0, 0, 1);
-    transition: all 0.3s ease;
 }
 
 .yellow-team .team-games {
-    color: #fff;
+    color: var(--white);
 }
 
-/* VS Divider */
+/* VS Divider - NO SHADOWS, NO BACKDROP */
 .vs-divider {
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%) skewX(45deg);
+    transform: translate(-50%, -50%);
     z-index: 10;
     display: flex;
     align-items: center;
@@ -347,8 +299,6 @@ body {
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    box-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
-    backdrop-filter: blur(10px);
     border: 3px solid rgba(0, 0, 0, 0.3);
 }
 
@@ -357,10 +307,9 @@ body {
     font-weight: 400;
     font-size: 36px;
     font-style: italic;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Sets Score Panel - RED */
+/* Sets Score Panel - NO BACKDROP, NO SHADOWS */
 .sets-score {
     position: fixed;
     left: 50%;
@@ -373,20 +322,17 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    backdrop-filter: blur(15px);
     border: 3px solid rgba(255, 0, 0, 0.8);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
     z-index: 20;
 }
 
 .sets-label {
-    color: #ff0000;
+    color: var(--red);
     font-weight: 400;
     font-size: 16px;
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 1px;
-    text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
 }
 
 .sets-scores {
@@ -396,15 +342,13 @@ body {
 }
 
 .sets-score-number {
-    color: #ff0000;
+    color: var(--red);
     font-weight: 400;
     font-size: 60px;
     font-style: italic;
-    text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
-    transition: all 0.3s ease;
 }
 
-/* Winner Display - BIGGER SIZE */
+/* WINNER SCREEN - KEEP ALL ANIMATIONS/SHADOWS */
 .winner-display {
     position: fixed;
     top: 50%;
@@ -419,10 +363,7 @@ body {
     gap: 40px;
     backdrop-filter: blur(30px);
     border: 4px solid rgba(212, 175, 55, 0.8);
-    box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.9),
-        0 0 80px rgba(212, 175, 55, 0.3),
-        inset 0 0 30px rgba(212, 175, 55, 0.1);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 80px rgba(212, 175, 55, 0.3), inset 0 0 30px rgba(212, 175, 55, 0.1);
     z-index: 100;
     animation: winnerAppear 1.5s ease-out;
     width: 95vw;
@@ -446,7 +387,6 @@ body {
     }
 }
 
-/* Winner Header Section */
 .winner-header {
     display: flex;
     flex-direction: column;
@@ -464,52 +404,45 @@ body {
 }
 
 @keyframes trophyBounce {
-    0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
-    50% { transform: translateY(-8px) scale(1.1) rotate(5deg); }
+    0%, 100% {
+        transform: translateY(0px) scale(1) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.1) rotate(5deg);
+    }
 }
 
 .winner-title {
-    color: #d4af37;
+    color: var(--gold);
     font-weight: 400;
     font-size: clamp(48px, 8vw, 80px);
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 4px;
-    text-shadow:
-        0 0 50px rgba(212, 175, 55, 0.9),
-        0 0 100px rgba(212, 175, 55, 0.7),
-        0 6px 12px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 50px rgba(212, 175, 55, 0.9), 0 0 100px rgba(212, 175, 55, 0.7), 0 6px 12px rgba(0, 0, 0, 0.8);
     animation: glow 3s ease-in-out infinite alternate;
     text-align: center;
 }
 
 @keyframes glow {
     from {
-        text-shadow:
-            0 0 50px rgba(212, 175, 55, 0.9),
-            0 0 100px rgba(212, 175, 55, 0.7),
-            0 6px 12px rgba(0, 0, 0, 0.8);
+        text-shadow: 0 0 50px rgba(212, 175, 55, 0.9), 0 0 100px rgba(212, 175, 55, 0.7), 0 6px 12px rgba(0, 0, 0, 0.8);
     }
     to {
-        text-shadow:
-            0 0 80px rgba(212, 175, 55, 1),
-            0 0 160px rgba(212, 175, 55, 0.9),
-            0 10px 20px rgba(0, 0, 0, 0.9);
+        text-shadow: 0 0 80px rgba(212, 175, 55, 1), 0 0 160px rgba(212, 175, 55, 0.9), 0 10px 20px rgba(0, 0, 0, 0.9);
     }
 }
 
 .winner-team-name {
-    color: #fff;
+    color: var(--white);
     font-weight: 400;
     font-size: clamp(36px, 6vw, 60px);
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 3px;
-    text-shadow:
-        0 0 30px rgba(255, 255, 255, 0.6),
-        0 4px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 4px 8px rgba(0, 0, 0, 0.8);
     text-align: center;
-    background: linear-gradient(45deg, #fff 0%, #d4af37 100%);
+    background: linear-gradient(45deg, #fff 0%, var(--gold) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -535,7 +468,7 @@ body {
 }
 
 .summary-label {
-    color: #d4af37;
+    color: var(--gold);
     font-size: clamp(16px, 2.5vw, 20px);
     font-weight: 400;
     text-transform: uppercase;
@@ -544,7 +477,7 @@ body {
 }
 
 .summary-value {
-    color: #fff;
+    color: var(--white);
     font-size: clamp(28px, 4vw, 40px);
     font-weight: 400;
     font-style: italic;
@@ -567,7 +500,7 @@ body {
 }
 
 .table-title {
-    color: #d4af37;
+    color: var(--gold);
     font-size: clamp(22px, 3.5vw, 28px);
     font-weight: 400;
     text-transform: uppercase;
@@ -585,7 +518,6 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .sets-table th {
@@ -601,31 +533,23 @@ body {
 }
 
 .sets-table td {
-    color: #fff;
+    color: var(--white);
     font-size: clamp(15px, 2.5vw, 20px);
     padding: 18px 12px;
     text-align: center;
     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
     background: rgba(255, 255, 255, 0.02);
-    transition: all 0.3s ease;
     font-weight: 400;
-}
-
-.sets-table tr:hover td {
-    background: rgba(212, 175, 55, 0.1);
-    transform: scale(1.02);
 }
 
 .sets-table tr:nth-child(even) td {
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Winner set highlighting */
 .sets-table td.winner-set {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(184, 134, 11, 0.3) 100%);
-    color: #d4af37;
+    color: var(--gold);
     font-weight: 600;
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
 }
 
 .team-column {
@@ -639,7 +563,7 @@ body {
 }
 
 .team-column.yellow {
-    color: #d4af37;
+    color: var(--gold);
 }
 
 /* Bottom Actions */
@@ -666,20 +590,20 @@ body {
 }
 
 .new-match-btn {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
     color: #000;
 }
 
 .new-match-btn:hover {
     transform: scale(1.08) translateY(-3px);
     box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6);
-    background: linear-gradient(135deg, #f0c940 0%, #d4af37 100%);
+    background: linear-gradient(135deg, #f0c940 0%, var(--gold) 100%);
 }
 
 .share-btn {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
     border: 2px solid rgba(212, 175, 55, 0.7);
-    color: #d4af37;
+    color: var(--gold);
     backdrop-filter: blur(10px);
 }
 
@@ -694,44 +618,12 @@ body {
     transform: scale(0.95);
 }
 
-/* Click Feedback */
+/* Click Feedback - REMOVED */
 .click-feedback {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 80px;
-    font-weight: 400;
-    opacity: 0;
-    animation: feedbackPulse 0.8s ease-in-out;
-    pointer-events: none;
-    z-index: 100;
+    display: none;
 }
 
-.black-team .click-feedback {
-    color: #d4af37;
-    text-shadow:
-        0 0 30px rgba(0, 0, 0, 1),
-        0 0 60px rgba(0, 0, 0, 0.9),
-        0 0 90px rgba(212, 175, 55, 0.6);
-}
-
-.yellow-team .click-feedback {
-    color: #000;
-    text-shadow:
-        0 0 30px rgba(255, 255, 255, 1),
-        0 0 60px rgba(255, 255, 255, 0.9),
-        0 0 90px rgba(0, 0, 0, 0.6);
-}
-
-@keyframes feedbackPulse {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-    70% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
-}
-
-/* Control Panel */
+/* CONTROL PANEL - KEEP ANIMATIONS */
 .control-panel {
     position: fixed;
     top: 50%;
@@ -750,7 +642,7 @@ body {
 }
 
 .control-btn {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -773,9 +665,7 @@ body {
     transform: scale(0.95);
 }
 
-/* ============================================================================
-   SPLASH SCREEN - FULL DISPLAY GIF
-   ============================================================================ */
+/* SPLASH SCREEN */
 .splash-screen {
     position: fixed;
     top: 0;
@@ -804,12 +694,11 @@ body {
     display: block;
 }
 
-.splash-screen video { pointer-events: none; }
+.splash-screen video {
+    pointer-events: none;
+}
 
-/* ============================================================================
-   MODE SELECTION SCREEN - ORIGINAL DESIGN
-   ============================================================================ */
-
+/* MODE SELECTION SCREEN */
 .mode-selection-screen {
     position: fixed;
     top: 0;
@@ -853,20 +742,18 @@ body {
 }
 
 .mode-title {
-    color: #d4af37;
+    color: var(--gold);
     font-size: 80px;
     font-weight: 400;
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 8px;
     line-height: 1;
-    text-shadow:
-        0 0 30px rgba(212, 175, 55, 0.8),
-        0 4px 20px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 4px 20px rgba(0, 0, 0, 0.8);
 }
 
 .mode-subtitle {
-    color: #fff;
+    color: var(--white);
     font-size: 48px;
     font-weight: 400;
     font-style: italic;
@@ -909,23 +796,12 @@ body {
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: all 0.4s ease;
     position: relative;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-.mode-card:hover {
-    transform: translateY(-10px) scale(1.03);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-}
-
-.mode-card:active {
-    transform: translateY(-5px) scale(1.01);
-}
-
-.mode-basic,
-.mode-competition {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+.mode-basic, .mode-competition {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
 }
 
 .mode-tournament {
@@ -933,12 +809,6 @@ body {
     cursor: not-allowed;
 }
 
-.mode-tournament:hover {
-    transform: none;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-/* Mode Icons */
 .mode-icon {
     width: 120px;
     height: 120px;
@@ -952,10 +822,6 @@ body {
 .mode-icon svg {
     width: 100%;
     height: 100%;
-}
-
-.mode-tournament .mode-icon {
-    color: #000;
 }
 
 .padel-racket-icon {
@@ -973,9 +839,8 @@ body {
     height: 100px;
 }
 
-/* Mode Titles - WHITE */
 .mode-name {
-    color: #fff;
+    color: var(--white);
     font-size: 48px;
     font-weight: 400;
     font-style: italic;
@@ -985,11 +850,6 @@ body {
     text-align: center;
 }
 
-.mode-tournament .mode-name {
-    color: #fff;
-}
-
-/* Mode Description Text - BLACK */
 .mode-description {
     color: #000;
     font-size: 20px;
@@ -1012,26 +872,19 @@ body {
     text-transform: uppercase;
 }
 
-/* Locked Mode Text */
 .mode-locked-text {
     color: #000;
     font-size: 18px;
 }
 
 .locked-title {
-    color: #fff;
+    color: var(--white);
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 10px;
     text-transform: uppercase;
 }
 
-.highlight-white {
-    color: #000;
-    font-weight: 400;
-}
-
-/* Lock Icon */
 .lock-icon {
     position: absolute;
     bottom: 30px;
@@ -1040,152 +893,7 @@ body {
     opacity: 0.95;
 }
 
-/* Responsive Mode Selection */
-@media (max-width: 1400px) {
-    .mode-cards-container {
-        gap: 30px;
-    }
-
-    .mode-card {
-        max-width: 380px;
-        min-height: 480px;
-        padding: 40px 30px;
-    }
-
-    .mode-title {
-        font-size: 64px;
-    }
-
-    .mode-subtitle {
-        font-size: 40px;
-    }
-
-    .mode-name {
-        font-size: 40px;
-    }
-
-    .mode-description {
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 1200px) {
-    .mode-cards-container {
-        flex-direction: column;
-        gap: 25px;
-        max-width: 500px;
-    }
-
-    .mode-card {
-        max-width: 100%;
-        min-height: auto;
-        padding: 35px 30px;
-    }
-
-    .mode-header {
-        margin-bottom: 40px;
-    }
-
-    .mode-title {
-        font-size: 56px;
-    }
-
-    .mode-subtitle {
-        font-size: 32px;
-    }
-
-    .mode-icon {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 20px;
-    }
-
-    .mode-name {
-        font-size: 36px;
-        margin-bottom: 20px;
-    }
-
-    .mode-description {
-        font-size: 16px;
-    }
-
-    .altus-logo {
-        width: 100px;
-    }
-}
-
-@media (max-width: 800px) {
-    .mode-selection-screen {
-        padding: 20px;
-    }
-
-    .mode-header {
-        margin-bottom: 30px;
-    }
-
-    .mode-title {
-        font-size: 42px;
-        letter-spacing: 4px;
-    }
-
-    .mode-subtitle {
-        font-size: 24px;
-    }
-
-    .mode-logo-top {
-        top: 15px;
-        right: 15px;
-    }
-
-    .altus-logo {
-        width: 80px;
-    }
-
-    .mode-card {
-        padding: 30px 25px;
-    }
-
-    .mode-icon {
-        width: 80px;
-        height: 80px;
-    }
-
-    .mode-name {
-        font-size: 32px;
-    }
-
-    .mode-description {
-        font-size: 14px;
-    }
-
-    .lock-icon svg {
-        width: 50px;
-        height: 50px;
-    }
-}
-
-@media (max-width: 600px) {
-    .mode-title {
-        font-size: 32px;
-    }
-
-    .mode-subtitle {
-        font-size: 20px;
-    }
-
-    .mode-name {
-        font-size: 28px;
-    }
-
-    .mode-description {
-        font-size: 13px;
-    }
-}
-
-
-/* ============================================================================
-   TOAST NOTIFICATIONS
-   ============================================================================ */
+/* TOAST NOTIFICATIONS - KEEP ALL ANIMATIONS */
 .toast-container {
     position: fixed;
     top: 100px;
@@ -1204,9 +912,7 @@ body {
     min-width: 300px;
     max-width: 400px;
     border: 2px solid rgba(212, 175, 55, 0.6);
-    box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.6),
-        0 0 40px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 40px rgba(212, 175, 55, 0.3);
     backdrop-filter: blur(15px);
     display: flex;
     align-items: center;
@@ -1218,9 +924,7 @@ body {
 
 .toast:hover {
     transform: translateX(-5px);
-    box-shadow:
-        0 12px 35px rgba(0, 0, 0, 0.7),
-        0 0 60px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 60px rgba(212, 175, 55, 0.5);
 }
 
 .toast.toast-out {
@@ -1241,7 +945,7 @@ body {
 }
 
 .toast-title {
-    color: #d4af37;
+    color: var(--gold);
     font-size: 18px;
     font-weight: 400;
     font-style: italic;
@@ -1262,7 +966,7 @@ body {
     border-radius: 50%;
     background: rgba(212, 175, 55, 0.2);
     border: 2px solid rgba(212, 175, 55, 0.4);
-    color: #d4af37;
+    color: var(--gold);
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
@@ -1286,23 +990,17 @@ body {
 
 .toast.toast-game {
     border-color: rgba(212, 175, 55, 0.8);
-    box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.6),
-        0 0 50px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 50px rgba(212, 175, 55, 0.5);
 }
 
 .toast.toast-set {
     border-color: rgba(255, 100, 100, 0.8);
-    box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.6),
-        0 0 60px rgba(255, 100, 100, 0.5);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 60px rgba(255, 100, 100, 0.5);
 }
 
 .toast.toast-match {
     border-color: rgba(0, 255, 150, 0.8);
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.8),
-        0 0 80px rgba(0, 255, 150, 0.6);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0, 255, 150, 0.6);
     animation: toastSlideIn 0.6s ease-out, toastPulse 2s ease-in-out infinite;
 }
 
@@ -1330,26 +1028,97 @@ body {
 
 @keyframes toastPulse {
     0%, 100% {
-        box-shadow:
-            0 12px 40px rgba(0, 0, 0, 0.8),
-            0 0 80px rgba(0, 255, 150, 0.6);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0, 255, 150, 0.6);
     }
     50% {
-        box-shadow:
-            0 12px 40px rgba(0, 0, 0, 0.8),
-            0 0 120px rgba(0, 255, 150, 0.9);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 120px rgba(0, 255, 150, 0.9);
     }
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-    .mode-options {
+@media (max-width: 1400px) {
+    .score-main {
+        font-size: clamp(100px, 12vw, 220px);
+    }
+    
+    .team-games {
+        font-size: clamp(30px, 4vw, 60px);
+    }
+    
+    .vs-divider {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .mode-cards-container {
         gap: 30px;
     }
     
     .mode-card {
-        width: 300px;
-        padding: 35px 25px;
+        max-width: 380px;
+        min-height: 480px;
+        padding: 40px 30px;
+    }
+    
+    .mode-title {
+        font-size: 64px;
+    }
+    
+    .mode-subtitle {
+        font-size: 40px;
+    }
+    
+    .mode-name {
+        font-size: 40px;
+    }
+    
+    .mode-description {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .mode-cards-container {
+        flex-direction: column;
+        gap: 25px;
+        max-width: 500px;
+    }
+    
+    .mode-card {
+        max-width: 100%;
+        min-height: auto;
+        padding: 35px 30px;
+    }
+    
+    .mode-header {
+        margin-bottom: 40px;
+    }
+    
+    .mode-title {
+        font-size: 56px;
+    }
+    
+    .mode-subtitle {
+        font-size: 32px;
+    }
+    
+    .mode-icon {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 20px;
+    }
+    
+    .mode-name {
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+    
+    .mode-description {
+        font-size: 16px;
+    }
+    
+    .altus-logo {
+        width: 100px;
     }
 }
 
@@ -1359,103 +1128,146 @@ body {
         padding: 40px 30px;
         gap: 30px;
     }
-
-    .winner-trophy { font-size: 100px; }
+    
+    .winner-trophy {
+        font-size: 100px;
+    }
     
     .match-summary {
         gap: 30px;
     }
-
+    
     .summary-item {
         padding: 15px 25px;
     }
-
+    
     .winner-actions {
         flex-direction: column;
         gap: 15px;
         width: 100%;
     }
-
+    
     .action-button {
         padding: 15px 30px;
         width: 100%;
     }
-    
-    .mode-options {
-        gap: 25px;
-    }
-    
-    .mode-card {
-        width: 280px;
-    }
 }
 
 @media (max-width: 800px) {
+    .mode-selection-screen {
+        padding: 20px;
+    }
+    
+    .mode-header {
+        margin-bottom: 30px;
+    }
+    
+    .mode-title {
+        font-size: 42px;
+        letter-spacing: 4px;
+    }
+    
+    .mode-subtitle {
+        font-size: 24px;
+    }
+    
+    .mode-logo-top {
+        top: 15px;
+        right: 15px;
+    }
+    
+    .altus-logo {
+        width: 80px;
+    }
+    
+    .mode-card {
+        padding: 30px 25px;
+    }
+    
+    .mode-icon {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .mode-name {
+        font-size: 32px;
+    }
+    
+    .mode-description {
+        font-size: 14px;
+    }
+    
+    .lock-icon svg {
+        width: 50px;
+        height: 50px;
+    }
+    
     .toast-container {
         top: 70px;
         right: 10px;
         left: 10px;
     }
-
+    
     .toast {
         min-width: unset;
         max-width: 100%;
         padding: 15px 20px;
     }
-
+    
     .toast-icon {
         font-size: 28px;
     }
-
+    
     .toast-title {
         font-size: 16px;
     }
-
+    
     .toast-message {
         font-size: 13px;
     }
 }
 
 @media (max-width: 600px) {
+    .mode-title {
+        font-size: 32px;
+    }
+    
+    .mode-subtitle {
+        font-size: 20px;
+    }
+    
+    .mode-name {
+        font-size: 28px;
+    }
+    
+    .mode-description {
+        font-size: 13px;
+    }
+    
     .winner-display {
         padding: 30px 25px;
         gap: 25px;
     }
-
-    .winner-trophy { font-size: 80px; }
+    
+    .winner-trophy {
+        font-size: 80px;
+    }
     
     .match-summary {
         gap: 20px;
     }
-
+    
     .summary-item {
         padding: 12px 20px;
     }
-
+    
     .table-container {
         padding: 25px 20px;
     }
-
+    
     .sets-table th,
     .sets-table td {
         padding: 15px 10px;
         font-size: clamp(13px, 3vw, 18px);
     }
-    
-    .mode-container {
-        gap: 40px;
-        padding: 30px 20px;
-    }
-    
-    .mode-card {
-        width: 100%;
-        max-width: 320px;
-    }
-}
-
-/* Standard Responsive Design */
-@media (max-width: 1400px) {
-    .score-main { font-size: clamp(100px, 12vw, 220px); }
-    .team-games { font-size: clamp(30px, 4vw, 60px); }
-    .vs-divider { width: 100px; height: 100px; }
 }
