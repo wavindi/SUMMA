@@ -1,4 +1,57 @@
 // =================================================================================================
+// DEBUG MODE - VISUAL INDICATOR (SET TO false IN PRODUCTION)
+// =================================================================================================
+const DEBUG_MODE = true;
+
+if (DEBUG_MODE) {
+    const debugDiv = document.createElement('div');
+    debugDiv.id = 'debugOverlay';
+    debugDiv.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.95);
+        color: lime;
+        padding: 15px;
+        font-family: monospace;
+        font-size: 13px;
+        z-index: 99999;
+        border: 2px solid lime;
+        border-radius: 8px;
+        min-width: 280px;
+        box-shadow: 0 0 20px rgba(0,255,0,0.3);
+    `;
+    window.addEventListener('load', () => {
+        document.body.appendChild(debugDiv);
+        setInterval(updateDebugDisplay, 100);
+    });
+}
+
+function updateDebugDisplay() {
+    if (!DEBUG_MODE) return;
+    const debugDiv = document.getElementById('debugOverlay');
+    if (!debugDiv) return;
+    
+    const splashActive = DOM.splashScreen?.classList.contains('active') || false;
+    const modeVisible = DOM.modeSelectionScreen?.style.display === 'flex';
+    const winnerVisible = DOM.winnerDisplay?.style.display === 'flex';
+    
+    debugDiv.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 8px; color: yellow; font-size: 15px;">🔍 DEBUG MODE</div>
+        <div style="color: ${splashActive ? 'lime' : '#666'}">Splash: ${splashActive ? '✅ ACTIVE' : '⬜ Hidden'}</div>
+        <div style="color: ${modeVisible ? 'lime' : '#666'}">Mode Screen: ${modeVisible ? '✅ VISIBLE' : '⬜ Hidden'}</div>
+        <div style="color: ${winnerVisible ? 'lime' : '#666'}">Winner: ${winnerVisible ? '✅ VISIBLE' : '⬜ Hidden'}</div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #444; color: ${isScoreboardActive ? 'lime' : 'red'}; font-weight: bold; font-size: 14px;">
+            🎯 Scoring: ${isScoreboardActive ? '✅ ENABLED' : '🚫 DISABLED'}
+        </div>
+        <div style="color: ${gameMode ? 'cyan' : 'orange'}">Mode: ${gameMode || 'NONE SET'}</div>
+        <div style="margin-top: 8px; font-size: 10px; color: #888;">
+            ${new Date().toLocaleTimeString()}
+        </div>
+    `;
+}
+
+// =================================================================================================
 // DOM CACHE
 // =================================================================================================
 const DOM = {
@@ -538,10 +591,10 @@ async function addPointManual(team) {
         if (data.success) {
             showClickFeedback(team);
         } else {
-            alert(data.error);
+            console.warn('Point blocked:', data.error);
         }
     } catch (error) {
-        alert('Network error: ' + error.message);
+        console.error('Network error:', error);
     }
 }
 
@@ -553,9 +606,9 @@ async function subtractPoint(team) {
             body: JSON.stringify({ team })
         });
         const data = await response.json();
-        if (!data.success) alert(data.error);
+        if (!data.success) console.warn('Subtract failed:', data.error);
     } catch (error) {
-        alert('Network error: ' + error.message);
+        console.error('Network error:', error);
     }
 }
 
