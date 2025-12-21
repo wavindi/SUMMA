@@ -603,6 +603,14 @@ body {
 .splash-screen video {
     pointer-events: none;
 }
+/* Splash image styling */
+.splash-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 
 /* MODE SELECTION SCREEN */
 .mode-selection-screen {
