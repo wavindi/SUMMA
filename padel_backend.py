@@ -576,9 +576,11 @@ def process_add_point(team):
         broadcast_pointscored(team, "addpoint")
         return {"success": True, "ignored": True, "message": "Point ignored until mode is selected", "gamestate": game_state}
 
+    # MODIFIED: Emit event instead of HTTP 400 to trigger frontend reset
     if game_state["matchwon"]:
-        return {"success": False, "error": "Match is already completed",
-                "winner": game_state["winner"], "matchwon": True}
+        print("⚠️  Match won - emitting pointscored event to trigger reset")
+        broadcast_pointscored(team, "addpoint")
+        return {"success": True, "message": "Match won - reset signal sent", "matchwon": True, "winner": game_state["winner"]}
 
     score_before = (game_state["score1"], game_state["score2"])
     game_before = (game_state["game1"], game_state["game2"])
