@@ -1,112 +1,5 @@
 // =================================================================================================
-// DEBUG MODE - VISUAL INDICATOR (SET TO false IN PRODUCTION)
-// =================================================================================================
-const DEBUG_MODE = true;
-
-if (DEBUG_MODE) {
-    const debugDiv = document.createElement('div');
-    debugDiv.id = 'debugOverlay';
-    debugDiv.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: rgba(0,0,0,0.95);
-        color: lime;
-        padding: 15px;
-        font-family: monospace;
-        font-size: 13px;
-        z-index: 99999;
-        border: 2px solid lime;
-        border-radius: 8px;
-        min-width: 280px;
-        box-shadow: 0 0 20px rgba(0,255,0,0.3);
-    `;
-    window.addEventListener('load', () => {
-        document.body.appendChild(debugDiv);
-        setInterval(updateDebugDisplay, 100);
-    });
-}
-
-function updateDebugDisplay() {
-    if (!DEBUG_MODE) return;
-    const debugDiv = document.getElementById('debugOverlay');
-    if (!debugDiv) return;
-    
-    const splashActive = DOM.splashScreen?.classList.contains('active') || false;
-    const modeVisible = DOM.modeSelectionScreen?.style.display === 'flex';
-    const winnerVisible = DOM.winnerDisplay?.style.display === 'flex';
-    
-    debugDiv.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 8px; color: yellow; font-size: 15px;">🔍 DEBUG MODE</div>
-        <div style="color: ${splashActive ? 'lime' : '#666'}">Splash: ${splashActive ? '✅ ACTIVE' : '⬜ Hidden'}</div>
-        <div style="color: ${modeVisible ? 'lime' : '#666'}">Mode Screen: ${modeVisible ? '✅ VISIBLE' : '⬜ Hidden'}</div>
-        <div style="color: ${winnerVisible ? 'lime' : '#666'}">Winner: ${winnerVisible ? '✅ VISIBLE' : '⬜ Hidden'}</div>
-        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #444; color: ${isScoreboardActive ? 'lime' : 'red'}; font-weight: bold; font-size: 14px;">
-            🎯 Scoring: ${isScoreboardActive ? '✅ ENABLED' : '🚫 DISABLED'}
-        </div>
-        <div style="color: ${gameMode ? 'cyan' : 'orange'}">Mode: ${gameMode || 'NONE SET'}</div>
-        <div style="margin-top: 8px; font-size: 10px; color: #888;">
-            ${new Date().toLocaleTimeString()}
-        </div>
-    `;
-}
-
-// =================================================================================================
-// DOM CACHE
-// =================================================================================================
-const DOM = {
-    splashScreen: null,
-    modeSelectionScreen: null,
-    winnerDisplay: null,
-    scoreBlack: null,
-    scoreYellow: null,
-    gamesBlack: null,
-    gamesYellow: null,
-    setsBlack: null,
-    setsYellow: null,
-    timeDisplay: null,
-    winnerTeamName: null,
-    finalSetsScore: null,
-    matchDuration: null,
-    setsTableBody: null,
-    toastContainer: null,
-    controlPanel: null,
-    blackTeam: null,
-    yellowTeam: null,
-    logoClick: null,
-    logoImg: null,
-    clickFeedbackBlack: null,
-    clickFeedbackYellow: null
-};
-
-function cacheDOMElements() {
-    DOM.splashScreen = document.getElementById('splashScreen');
-    DOM.modeSelectionScreen = document.getElementById('modeSelectionScreen');
-    DOM.winnerDisplay = document.getElementById('winnerDisplay');
-    DOM.scoreBlack = document.getElementById('scoreBlack');
-    DOM.scoreYellow = document.getElementById('scoreYellow');
-    DOM.gamesBlack = document.getElementById('gamesBlack');
-    DOM.gamesYellow = document.getElementById('gamesYellow');
-    DOM.setsBlack = document.getElementById('setsBlack');
-    DOM.setsYellow = document.getElementById('setsYellow');
-    DOM.timeDisplay = document.getElementById('timeDisplay');
-    DOM.winnerTeamName = document.getElementById('winnerTeamName');
-    DOM.finalSetsScore = document.getElementById('finalSetsScore');
-    DOM.matchDuration = document.getElementById('matchDuration');
-    DOM.setsTableBody = document.getElementById('setsTableBody');
-    DOM.toastContainer = document.getElementById('toastContainer');
-    DOM.controlPanel = document.getElementById('controlPanel');
-    DOM.blackTeam = document.querySelector('.team-section.black-team');
-    DOM.yellowTeam = document.querySelector('.team-section.yellow-team');
-    DOM.logoClick = document.getElementById('logoClick');
-    DOM.logoImg = document.getElementById('logoImg');
-    DOM.clickFeedbackBlack = document.getElementById('clickFeedbackBlack');
-    DOM.clickFeedbackYellow = document.getElementById('clickFeedbackYellow');
-    console.log('✅ DOM elements cached');
-}
-
-// =================================================================================================
-// SOCKET.IO CONNECTION
+// SOCKET.IO REAL-TIME CONNECTION
 // =================================================================================================
 const socket = io('http://127.0.0.1:5000', {
     transports: ['polling', 'websocket'],
@@ -116,7 +9,7 @@ const socket = io('http://127.0.0.1:5000', {
 });
 
 socket.on('connect', () => {
-    console.log('✅ Connected to server');
+    console.log('✅ Connected to server via Socket.IO');
     socket.emit('request_gamestate');
 });
 
@@ -125,12 +18,12 @@ socket.on('disconnect', () => {
 });
 
 socket.on('gamestateupdate', (data) => {
-    console.log('📡 Game state update:', data);
+    console.log('📡 Game state update received:', data);
     updateFromGameState(data);
 });
 
 socket.on('pointscored', (data) => {
-    console.log('🎯 SENSOR INPUT RECEIVED:', data);
+    console.log('🎯 Point scored:', data);
     handleSensorInput(data);
 });
 
@@ -140,112 +33,103 @@ socket.on('matchwon', (data) => {
 });
 
 // =================================================================================================
-// GAME STATE
+// GAME VARIABLES
 // =================================================================================================
-let score1 = 0, score2 = 0, games1 = 0, games2 = 0, sets1 = 0, sets2 = 0;
-let matchWon = false, winnerData = null, setsHistory = [];
+let score1 = 0;
+let score2 = 0;
+let games1 = 0;
+let games2 = 0;
+let sets1 = 0;
+let sets2 = 0;
+let matchWon = false;
+let winnerData = null;
+let setsHistory = [];
 let matchStartTime = Date.now();
 let splashDismissed = false;
 let winnerDismissTimeout = null;
-let gameMode = null;
+let gameMode = null; // 'basic', 'competition', or null
+let isScoreboardActive = false; // Track if scoreboard is ready for scoring
 
-// CRITICAL FLAGS
-let isScoreboardActive = false; // Only TRUE when scoreboard is visible and ready
-
-// Mode detection
-let pendingSensorEvents = [];
-const DUAL_SENSOR_WINDOW = 300; // 300ms window to detect both sensors
-let modeDetectionTimer = null;
-
-// Debouncing
-const SENSOR_DEBOUNCE_MS = 150;
-let lastSensorTime = { black: 0, yellow: 0 };
+// Mode detection variables
+let pendingSensorEvents = []; // Store recent sensor events
+const DUAL_SENSOR_WINDOW = 800; // 800ms window to detect both sensors firing
 
 const API_BASE = "http://127.0.0.1:5000";
 
 // =================================================================================================
-// SENSOR INPUT HANDLER - MAIN ROUTING LOGIC
+// SENSOR INPUT HANDLER WITH MODE DETECTION
 // =================================================================================================
 function handleSensorInput(data) {
-    const team = data.team;
-    const now = Date.now();
+    const currentTime = Date.now();
     
-    // DEBOUNCE CHECK
-    if (now - lastSensorTime[team] < SENSOR_DEBOUNCE_MS) {
-        console.log(`🚫 DEBOUNCED: ${team} (${now - lastSensorTime[team]}ms since last)`);
-        return;
-    }
-    lastSensorTime[team] = now;
-    
-    console.log(`\n========== SENSOR INPUT: ${team.toUpperCase()} ==========`);
-    console.log(`Splash active: ${DOM.splashScreen?.classList.contains('active')}`);
-    console.log(`Mode selection visible: ${DOM.modeSelectionScreen?.style.display === 'flex'}`);
-    console.log(`Scoreboard active: ${isScoreboardActive}`);
-    console.log(`Winner visible: ${DOM.winnerDisplay?.style.display === 'flex'}`);
-    
-    // ========== PRIORITY 1: WINNER SCREEN ==========
-    if (DOM.winnerDisplay && DOM.winnerDisplay.style.display === 'flex') {
-        console.log('✅ STATE: Winner screen → RESET MATCH');
+    // STATE 1: Winner screen is showing - reset match
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+        console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
         clearWinnerTimeout();
         resetMatchAndGoToSplash();
         return;
     }
     
-    // ========== PRIORITY 2: SPLASH SCREEN ==========
-    if (DOM.splashScreen && DOM.splashScreen.classList.contains('active')) {
-        console.log('✅ STATE: Splash screen → GO TO MODE SELECTION (NO SCORING)');
+    // STATE 2: Splash screen is showing - dismiss it (no scoring)
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen && splashScreen.classList.contains('active')) {
+        console.log('✨ Splash screen active - dismissing (no scoring)');
         dismissSplash();
         return;
     }
     
-    // ========== PRIORITY 3: MODE SELECTION ==========
-    if (DOM.modeSelectionScreen && DOM.modeSelectionScreen.style.display === 'flex') {
-        console.log('✅ STATE: Mode selection → DETECT MODE (NO SCORING)');
-        detectModeFromSensor(team, now);
+    // STATE 3: Mode selection screen - detect mode and select (no scoring)
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen && modeScreen.style.display === 'flex') {
+        console.log('🎮 Mode selection active - detecting mode from sensor pattern');
+        detectAndSelectMode(data, currentTime);
         return;
     }
     
-    // ========== PRIORITY 4: SCOREBOARD ACTIVE ==========
+    // STATE 4: Scoreboard is active - normal scoring
     if (isScoreboardActive && gameMode) {
-        console.log(`✅ STATE: Scoreboard active → SCORE POINT for ${team}`);
-        showClickFeedback(team);
-        showToast(data.action, team, data.gamestate);
-        return;
+        console.log('📊 Scoreboard active - processing point');
+        showClickFeedback(data.team);
+        showToast(data.action, data.team, data.gamestate);
     }
-    
-    // ========== FALLBACK ==========
-    console.log('⚠️ NO VALID STATE - Sensor input ignored');
 }
 
 // =================================================================================================
-// MODE DETECTION FROM SENSORS
+// MODE DETECTION LOGIC
 // =================================================================================================
-function detectModeFromSensor(team, timestamp) {
-    // Add sensor event to buffer
-    pendingSensorEvents.push({ team, time: timestamp });
-    console.log(`📊 Sensor buffer: [${pendingSensorEvents.map(e => e.team).join(', ')}]`);
+function detectAndSelectMode(data, currentTime) {
+    // Add current sensor event to pending list
+    pendingSensorEvents.push({
+        team: data.team,
+        time: currentTime
+    });
     
-    // Check if we have both teams
+    // Clean up old events (older than detection window)
+    pendingSensorEvents = pendingSensorEvents.filter(event => 
+        currentTime - event.time < DUAL_SENSOR_WINDOW
+    );
+    
+    // Check if we have both sensors within the time window
     const hasBlack = pendingSensorEvents.some(e => e.team === 'black');
     const hasYellow = pendingSensorEvents.some(e => e.team === 'yellow');
     
     if (hasBlack && hasYellow) {
-        console.log('🏆 BOTH SENSORS DETECTED → COMPETITION MODE');
-        clearTimeout(modeDetectionTimer);
-        pendingSensorEvents = [];
+        // BOTH sensors fired within window = COMPETITION MODE
+        console.log('🏆 COMPETITION MODE detected (both sensors fired)');
         selectMode('competition');
-        return;
-    }
-    
-    // If only one sensor, wait for potential second sensor
-    if (pendingSensorEvents.length === 1) {
-        console.log(`⏳ Waiting ${DUAL_SENSOR_WINDOW}ms for second sensor...`);
-        clearTimeout(modeDetectionTimer);
-        modeDetectionTimer = setTimeout(() => {
-            if (pendingSensorEvents.length === 1) {
-                console.log('🎯 SINGLE SENSOR TIMEOUT → BASIC MODE');
-                pendingSensorEvents = [];
+        pendingSensorEvents = []; // Clear events
+    } else if (pendingSensorEvents.length === 1) {
+        // Wait a bit to see if second sensor fires
+        setTimeout(() => {
+            const stillHasOne = pendingSensorEvents.length === 1;
+            const stillOnModeScreen = document.getElementById('modeSelectionScreen').style.display === 'flex';
+            
+            if (stillHasOne && stillOnModeScreen) {
+                // Only ONE sensor fired = BASIC MODE
+                console.log('🎯 BASIC MODE detected (single sensor)');
                 selectMode('basic');
+                pendingSensorEvents = []; // Clear events
             }
         }, DUAL_SENSOR_WINDOW);
     }
@@ -257,123 +141,151 @@ function detectModeFromSensor(team, timestamp) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏓 Padel Scoreboard Initialized');
     
-    cacheDOMElements();
     setupSplashScreen();
     setupLogo();
-    requestAnimationFrame(timerLoop);
+    
+    // Start match duration timer
+    updateMatchDuration();
+    setInterval(updateMatchDuration, 1000);
+    
     setupClickableTeams();
     setupWinnerScreenClickDismiss();
-    
-    // Cleanup old sensor events
-    setInterval(() => {
-        if (pendingSensorEvents.length > 0) {
-            const now = Date.now();
-            pendingSensorEvents = pendingSensorEvents.filter(e => now - e.time < 1000);
-        }
-    }, 2000);
 });
-
-// =================================================================================================
-// TIMER
-// =================================================================================================
-let lastTimerUpdate = 0;
-
-function timerLoop(timestamp) {
-    if (timestamp - lastTimerUpdate >= 1000) {
-        updateMatchDuration();
-        lastTimerUpdate = timestamp;
-    }
-    requestAnimationFrame(timerLoop);
-}
-
-function updateMatchDuration() {
-    const elapsed = Date.now() - matchStartTime;
-    const totalSeconds = Math.floor(elapsed / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    if (DOM.timeDisplay) DOM.timeDisplay.textContent = formattedTime;
-}
 
 // =================================================================================================
 // SPLASH SCREEN
 // =================================================================================================
 function setupSplashScreen() {
-    if (!DOM.splashScreen) return;
+    const splashScreen = document.getElementById('splashScreen');
     
-    DOM.splashScreen.addEventListener('click', dismissSplash);
-    DOM.splashScreen.addEventListener('touchstart', dismissSplash);
+    // Dismiss splash and show mode selection
+    const dismissSplashHandler = () => {
+        dismissSplash();
+    };
+    
+    splashScreen.addEventListener('click', dismissSplashHandler);
+    splashScreen.addEventListener('touchstart', dismissSplashHandler);
 }
 
 function dismissSplash() {
-    if (splashDismissed) return;
-    
-    console.log('🎬 SPLASH DISMISSED → Showing mode selection');
-    splashDismissed = true;
-    DOM.splashScreen.classList.remove('active');
-    
-    setTimeout(() => {
-        showModeSelection();
-    }, 500);
+    if (!splashDismissed) {
+        splashDismissed = true;
+        const splashScreen = document.getElementById('splashScreen');
+        splashScreen.classList.remove('active');
+        
+        // Show mode selection after splash
+        setTimeout(() => {
+            showModeSelection();
+        }, 500);
+        
+        console.log('✨ Splash screen dismissed - showing mode selection');
+    }
 }
 
 // =================================================================================================
-// MODE SELECTION
+// MODE SELECTION SCREEN
 // =================================================================================================
 function showModeSelection() {
-    console.log('🎮 MODE SELECTION SHOWN');
-    DOM.modeSelectionScreen.style.display = 'flex';
-    DOM.modeSelectionScreen.offsetHeight;
-    DOM.modeSelectionScreen.classList.add('active');
-    pendingSensorEvents = [];
-    isScoreboardActive = false; // Ensure scoring is OFF
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen) {
+        modeScreen.style.display = 'flex';
+        // Force reflow
+        modeScreen.offsetHeight;
+        modeScreen.classList.add('active');
+        
+        // Reset pending sensor events when mode selection appears
+        pendingSensorEvents = [];
+        
+        console.log('🎮 Mode selection screen shown - ready for mode detection');
+    }
 }
 
 async function selectMode(mode) {
-    console.log(`\n========== MODE SELECTED: ${mode.toUpperCase()} ==========`);
+    console.log(`🎯 Mode selected: ${mode}`);
+    
+    // Set game mode
     gameMode = mode;
     
-    // Send to backend
+    // Send mode to backend
     try {
         const response = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ mode: mode })
         });
+        
         const data = await response.json();
-        console.log(data.success ? `✅ Backend confirmed: ${mode}` : `❌ Backend error: ${data.error}`);
+        if (data.success) {
+            console.log(`✅ Game mode set to: ${mode}`);
+        } else {
+            console.error('❌ Failed to set game mode:', data.error);
+        }
     } catch (error) {
-        console.error('❌ Failed to set mode:', error);
+        console.error('❌ Error setting game mode:', error);
     }
     
-    // Hide mode selection
-    DOM.modeSelectionScreen.classList.remove('active');
+    // Hide mode selection screen
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen) {
+        modeScreen.classList.remove('active');
+        setTimeout(() => {
+            modeScreen.style.display = 'none';
+            // Activate scoreboard for scoring AFTER mode screen is hidden
+            isScoreboardActive = true;
+            console.log('✅ Scoreboard now active for scoring');
+        }, 500);
+    }
     
-    setTimeout(() => {
-        DOM.modeSelectionScreen.style.display = 'none';
-        
-        // CRITICAL: Activate scoreboard ONLY AFTER screen is hidden
-        isScoreboardActive = true;
-        matchStartTime = Date.now(); // Reset timer
-        
-        console.log('✅✅✅ SCOREBOARD NOW ACTIVE - SCORING ENABLED ✅✅✅');
-    }, 500);
+    // Reset and start match timer
+    matchStartTime = Date.now();
+    
+    console.log('📊 Scoreboard ready - match timer started');
 }
 
 // =================================================================================================
-// WINNER SCREEN
+// MATCH DURATION TIMER (REPLACES CLOCK)
+// =================================================================================================
+function updateMatchDuration() {
+    const now = Date.now();
+    const elapsed = now - matchStartTime;
+    
+    // Convert to minutes and seconds
+    const totalSeconds = Math.floor(elapsed / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    // Format as MM:SS
+    const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    const timeEl = document.getElementById('timeDisplay');
+    if (timeEl) {
+        timeEl.textContent = formattedTime;
+    }
+}
+
+// =================================================================================================
+// WINNER SCREEN MANAGEMENT
 // =================================================================================================
 function setupWinnerScreenClickDismiss() {
-    if (!DOM.winnerDisplay) return;
-    
-    DOM.winnerDisplay.addEventListener('click', function(e) {
-        if (e.target.closest('.action-button')) return;
-        if (DOM.winnerDisplay.style.display === 'flex') {
-            console.log('🏆 Winner screen clicked → RESET');
-            clearWinnerTimeout();
-            resetMatchAndGoToSplash();
-        }
-    });
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    if (winnerDisplay) {
+        winnerDisplay.addEventListener('click', function(e) {
+            // Don't close if clicking on buttons
+            if (e.target.closest('.action-button')) {
+                return;
+            }
+            
+            // Only close if the winner screen is actually visible
+            if (winnerDisplay.style.display === 'flex') {
+                console.log('👆 Winner screen clicked - resetting match and going to splash');
+                clearWinnerTimeout();
+                resetMatchAndGoToSplash();
+            }
+        });
+        console.log('✅ Winner screen click-to-dismiss enabled');
+    }
 }
 
 function clearWinnerTimeout() {
@@ -384,59 +296,101 @@ function clearWinnerTimeout() {
 }
 
 async function resetMatchAndGoToSplash() {
-    console.log('\n========== RESET MATCH ==========');
+    console.log('🔄 Resetting match, mode, and going to splash...');
     
-    // Reset backend
+    // 1. Reset match on backend
     try {
-        await fetch(`${API_BASE}/resetmatch`, {
+        const resetResponse = await fetch(`${API_BASE}/resetmatch`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
-        await fetch(`${API_BASE}/setgamemode`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: null })
-        });
-        console.log('✅ Backend reset');
+        
+        const resetData = await resetResponse.json();
+        if (resetData.success) {
+            console.log('✅ Match reset successfully on backend');
+        } else {
+            console.error('❌ Failed to reset match on backend');
+        }
     } catch (error) {
-        console.error('❌ Backend reset error:', error);
+        console.error('❌ Error resetting match:', error);
     }
     
-    // Reset local state
-    score1 = score2 = games1 = games2 = sets1 = sets2 = 0;
+    // 2. Reset game mode on backend (set to null or empty)
+    try {
+        const modeResponse = await fetch(`${API_BASE}/setgamemode`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ mode: null })
+        });
+        
+        const modeData = await modeResponse.json();
+        if (modeData.success) {
+            console.log('✅ Game mode reset successfully on backend');
+        } else {
+            console.error('❌ Failed to reset game mode on backend');
+        }
+    } catch (error) {
+        console.error('❌ Error resetting game mode:', error);
+    }
+    
+    // 3. Reset local variables
+    score1 = 0;
+    score2 = 0;
+    games1 = 0;
+    games2 = 0;
+    sets1 = 0;
+    sets2 = 0;
     matchWon = false;
     winnerData = null;
     setsHistory = [];
     matchStartTime = Date.now();
-    gameMode = null;
-    isScoreboardActive = false; // DISABLE SCORING
-    pendingSensorEvents = [];
-    lastSensorTime = { black: 0, yellow: 0 };
-    clearTimeout(modeDetectionTimer);
+    gameMode = null; // Reset game mode
+    isScoreboardActive = false; // Deactivate scoreboard
+    pendingSensorEvents = []; // Clear pending events
     
-    // Hide screens
-    if (DOM.winnerDisplay) DOM.winnerDisplay.style.display = 'none';
-    if (DOM.modeSelectionScreen) {
-        DOM.modeSelectionScreen.classList.remove('active');
-        DOM.modeSelectionScreen.style.display = 'none';
+    // 4. Hide winner display
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    if (winnerDisplay) {
+        winnerDisplay.style.display = 'none';
     }
     
+    // 5. Hide mode selection if visible
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen) {
+        modeScreen.classList.remove('active');
+        modeScreen.style.display = 'none';
+    }
+    
+    // 6. Update scoreboard display
     updateDisplay();
     
-    // Show splash
+    // 7. Reset splash dismissed flag
     splashDismissed = false;
-    DOM.splashScreen.classList.add('active');
-    console.log('✅ Reset complete → Splash screen shown');
+    
+    // 8. Show splash screen
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen) {
+        splashScreen.classList.add('active');
+        console.log('🎬 Match and mode reset complete - splash screen displayed');
+    }
 }
 
 // =================================================================================================
 // TOAST NOTIFICATIONS
 // =================================================================================================
 function showToast(action, team, gameState) {
-    if (!DOM.toastContainer) return;
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
     
     const teamName = team === 'black' ? 'BLACK' : 'YELLOW';
-    let icon = '🎯', title = 'POINT SCORED', message = `${teamName} team scored!`, toastType = 'toast-point';
+    let icon = '🎯';
+    let title = 'POINT SCORED';
+    let message = `${teamName} team scored!`;
+    let toastType = 'toast-point';
     
     if (action === 'game') {
         icon = '🎾';
@@ -466,10 +420,13 @@ function showToast(action, team, gameState) {
         <div class="toast-close">×</div>
     `;
     
-    DOM.toastContainer.appendChild(toast);
+    container.appendChild(toast);
     
-    toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+    // Close button
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => removeToast(toast));
     
+    // Auto-remove after duration based on type
     const duration = action === 'match' ? 8000 : action === 'set' ? 5000 : action === 'game' ? 4000 : 3000;
     setTimeout(() => removeToast(toast), duration);
 }
@@ -477,72 +434,152 @@ function showToast(action, team, gameState) {
 function removeToast(toast) {
     toast.classList.add('toast-out');
     setTimeout(() => {
-        if (toast.parentElement) toast.parentElement.removeChild(toast);
+        if (toast.parentElement) {
+            toast.parentElement.removeChild(toast);
+        }
     }, 400);
 }
 
 // =================================================================================================
-// CLICKABLE TEAMS
+// SETUP CLICKABLE TEAMS (MANUAL MODE SELECTION)
 // =================================================================================================
 function setupClickableTeams() {
-    if (DOM.blackTeam) {
-        DOM.blackTeam.style.cursor = 'pointer';
-        DOM.blackTeam.addEventListener('click', function(e) {
-            if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) return;
+    const blackTeam = document.querySelector('.team-section.black-team');
+    const yellowTeam = document.querySelector('.team-section.yellow-team');
+    
+    if (blackTeam) {
+        blackTeam.style.cursor = 'pointer';
+        blackTeam.addEventListener('click', function(e) {
+            if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) {
+                return;
+            }
             
-            if (DOM.winnerDisplay?.style.display === 'flex') {
+            // If winner screen is showing, reset match and go to splash
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+                console.log('🏆 Winner screen visible - black side clicked, resetting match and going to splash');
+                clearWinnerTimeout();
                 resetMatchAndGoToSplash();
-            } else if (DOM.splashScreen?.classList.contains('active')) {
+                return;
+            }
+            
+            // If splash is showing, dismiss it (no mode selection)
+            const splashScreen = document.getElementById('splashScreen');
+            if (splashScreen && splashScreen.classList.contains('active')) {
+                console.log('✨ Splash active - dismissing only (no mode selection)');
                 dismissSplash();
-            } else if (DOM.modeSelectionScreen?.style.display === 'flex') {
+                return;
+            }
+            
+            // If mode selection is showing, manually select BASIC mode
+            const modeScreen = document.getElementById('modeSelectionScreen');
+            if (modeScreen && modeScreen.style.display === 'flex') {
+                console.log('🎮 Black team clicked on mode screen - selecting BASIC mode');
                 selectMode('basic');
-            } else if (isScoreboardActive) {
+                return;
+            }
+            
+            // If scoreboard is active, add point via control panel
+            if (isScoreboardActive) {
+                console.log('Black team clicked');
                 addPointManual('black');
             }
         });
+        console.log('✅ Black team click listener added');
     }
     
-    if (DOM.yellowTeam) {
-        DOM.yellowTeam.style.cursor = 'pointer';
-        DOM.yellowTeam.addEventListener('click', function(e) {
-            if (e.target.closest('#controlPanel')) return;
+    if (yellowTeam) {
+        yellowTeam.style.cursor = 'pointer';
+        yellowTeam.addEventListener('click', function(e) {
+            if (e.target.closest('#controlPanel')) {
+                return;
+            }
             
-            if (DOM.winnerDisplay?.style.display === 'flex') {
+            // If winner screen is showing, reset match and go to splash
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+                console.log('🏆 Winner screen visible - yellow side clicked, resetting match and going to splash');
+                clearWinnerTimeout();
                 resetMatchAndGoToSplash();
-            } else if (DOM.splashScreen?.classList.contains('active')) {
+                return;
+            }
+            
+            // If splash is showing, dismiss it (no mode selection)
+            const splashScreen = document.getElementById('splashScreen');
+            if (splashScreen && splashScreen.classList.contains('active')) {
+                console.log('✨ Splash active - dismissing only (no mode selection)');
                 dismissSplash();
-            } else if (DOM.modeSelectionScreen?.style.display === 'flex') {
+                return;
+            }
+            
+            // If mode selection is showing, manually select BASIC mode
+            const modeScreen = document.getElementById('modeSelectionScreen');
+            if (modeScreen && modeScreen.style.display === 'flex') {
+                console.log('🎮 Yellow team clicked on mode screen - selecting BASIC mode');
                 selectMode('basic');
-            } else if (isScoreboardActive) {
+                return;
+            }
+            
+            // If scoreboard is active, add point via control panel
+            if (isScoreboardActive) {
+                console.log('Yellow team clicked');
                 addPointManual('yellow');
+            }
+        });
+        console.log('✅ Yellow team click listener added');
+    }
+}
+
+// =================================================================================================
+// LOGO SETUP
+// =================================================================================================
+function setupLogo() {
+    const logo = document.getElementById('logoClick');
+    const logoImg = document.getElementById('logoImg');
+    const controlPanel = document.getElementById('controlPanel');
+    
+    if (logoImg) {
+        logoImg.onload = function() {
+            console.log('✅ Logo image loaded');
+            if (logo) {
+                logo.classList.remove('no-image');
+            }
+        };
+        
+        logoImg.onerror = function() {
+            console.log('⚠️ Logo image failed, using fallback');
+            if (logo) {
+                logo.classList.add('no-image');
+            }
+        };
+        
+        if (logoImg.complete) {
+            if (logoImg.naturalWidth === 0) {
+                logoImg.onerror();
+            } else {
+                logoImg.onload();
+            }
+        }
+    }
+    
+    if (logo) {
+        logo.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (controlPanel) {
+                if (controlPanel.style.display === 'none' || !controlPanel.style.display) {
+                    controlPanel.style.display = 'flex';
+                    console.log('🎛️ Controls shown');
+                } else {
+                    controlPanel.style.display = 'none';
+                    console.log('🎛️ Controls hidden');
+                }
             }
         });
     }
 }
 
 // =================================================================================================
-// LOGO
-// =================================================================================================
-function setupLogo() {
-    if (DOM.logoImg) {
-        DOM.logoImg.onload = () => DOM.logoClick?.classList.remove('no-image');
-        DOM.logoImg.onerror = () => DOM.logoClick?.classList.add('no-image');
-        if (DOM.logoImg.complete) {
-            DOM.logoImg.naturalWidth === 0 ? DOM.logoImg.onerror() : DOM.logoImg.onload();
-        }
-    }
-    
-    DOM.logoClick?.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (DOM.controlPanel) {
-            DOM.controlPanel.style.display = 
-                (DOM.controlPanel.style.display === 'none' || !DOM.controlPanel.style.display) ? 'flex' : 'none';
-        }
-    });
-}
-
-// =================================================================================================
-// GAME STATE UPDATE
+// GAME STATE UPDATE FROM SOCKET.IO
 // =================================================================================================
 function updateFromGameState(gameState) {
     score1 = gameState.score1;
@@ -560,7 +597,7 @@ function updateFromGameState(gameState) {
         fetchMatchDataAndDisplay();
     }
     
-    if (gameState.sethistory?.length > 0) {
+    if (gameState.sethistory && gameState.sethistory.length > 0) {
         setsHistory = gameState.sethistory.map(setScore => {
             const [blackGames, yellowGames] = setScore.split('-').map(Number);
             return { blackGames, yellowGames };
@@ -569,54 +606,84 @@ function updateFromGameState(gameState) {
 }
 
 function updateDisplay() {
-    if (DOM.scoreBlack) DOM.scoreBlack.textContent = score1;
-    if (DOM.scoreYellow) DOM.scoreYellow.textContent = score2;
-    if (DOM.gamesBlack) DOM.gamesBlack.textContent = games1;
-    if (DOM.gamesYellow) DOM.gamesYellow.textContent = games2;
-    if (DOM.setsBlack) DOM.setsBlack.textContent = sets1;
-    if (DOM.setsYellow) DOM.setsYellow.textContent = sets2;
+    const scoreBlack = document.getElementById('scoreBlack');
+    const scoreYellow = document.getElementById('scoreYellow');
+    const gamesBlack = document.getElementById('gamesBlack');
+    const gamesYellow = document.getElementById('gamesYellow');
+    const setsBlackEl = document.getElementById('setsBlack');
+    const setsYellowEl = document.getElementById('setsYellow');
+    
+    if (scoreBlack) scoreBlack.textContent = score1;
+    if (scoreYellow) scoreYellow.textContent = score2;
+    if (gamesBlack) gamesBlack.textContent = games1;
+    if (gamesYellow) gamesYellow.textContent = games2;
+    if (setsBlackEl) setsBlackEl.textContent = sets1;
+    if (setsYellowEl) setsYellowEl.textContent = sets2;
+    
+    console.log(`📊 Display updated - Score: ${score1}-${score2} | Games: ${games1}-${games2} | Sets: ${sets1}-${sets2}`);
 }
 
 // =================================================================================================
-// MANUAL CONTROLS
+// MANUAL POINT ADDITION
 // =================================================================================================
 async function addPointManual(team) {
+    console.log(`➕ Adding point to ${team} team`);
+    
     try {
         const response = await fetch(`${API_BASE}/addpoint`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ team: team })
         });
+        
         const data = await response.json();
         if (data.success) {
+            console.log('✅ Point added successfully');
             showClickFeedback(team);
         } else {
-            console.warn('Point blocked:', data.error);
+            console.error('❌ Failed to add point:', data.error);
+            alert(data.error);
         }
     } catch (error) {
-        console.error('Network error:', error);
+        console.error('❌ Error adding point:', error);
+        alert('Network error: ' + error.message);
     }
 }
 
 async function subtractPoint(team) {
+    console.log(`➖ Subtracting point from ${team} team`);
+    
     try {
         const response = await fetch(`${API_BASE}/subtractpoint`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ team: team })
         });
+        
         const data = await response.json();
-        if (!data.success) console.warn('Subtract failed:', data.error);
+        if (data.success) {
+            console.log('✅ Point subtracted successfully');
+        } else {
+            console.error('❌ Failed to subtract point:', data.error);
+            alert(data.error);
+        }
     } catch (error) {
-        console.error('Network error:', error);
+        console.error('❌ Error subtracting point:', error);
+        alert('Network error: ' + error.message);
     }
 }
 
 function showClickFeedback(team) {
-    const feedback = team === 'black' ? DOM.clickFeedbackBlack : DOM.clickFeedbackYellow;
+    const feedback = document.getElementById(team === 'black' ? 'clickFeedbackBlack' : 'clickFeedbackYellow');
     if (feedback) {
         feedback.style.animation = 'none';
-        setTimeout(() => feedback.style.animation = 'feedbackPulse 0.8s ease-in-out', 10);
+        setTimeout(() => {
+            feedback.style.animation = 'feedbackPulse 0.8s ease-in-out';
+        }, 10);
     }
 }
 
@@ -636,18 +703,34 @@ async function fetchMatchDataAndDisplay() {
 }
 
 function displayWinner(data) {
-    if (data.matchdata) displayWinnerWithData(data.matchdata);
+    if (data.matchdata) {
+        displayWinnerWithData(data.matchdata);
+    }
 }
 
 function displayWinnerWithData(matchData) {
-    if (DOM.winnerTeamName) {
-        DOM.winnerTeamName.textContent = matchData.winnername;
-        DOM.winnerTeamName.className = `winner-team-name ${matchData.winnerteam}`;
-    }
-    if (DOM.finalSetsScore) DOM.finalSetsScore.textContent = matchData.finalsetsscore;
-    if (DOM.matchDuration) DOM.matchDuration.textContent = matchData.matchduration;
+    console.log('🏆 Displaying winner:', matchData);
     
-    if (DOM.setsTableBody && matchData.setsbreakdown) {
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    const winnerTeamName = document.getElementById('winnerTeamName');
+    const finalSetsScore = document.getElementById('finalSetsScore');
+    const matchDuration = document.getElementById('matchDuration');
+    const setsTableBody = document.getElementById('setsTableBody');
+    
+    if (winnerTeamName) {
+        winnerTeamName.textContent = matchData.winnername;
+        winnerTeamName.className = `winner-team-name ${matchData.winnerteam}`;
+    }
+    
+    if (finalSetsScore) {
+        finalSetsScore.textContent = matchData.finalsetsscore;
+    }
+    
+    if (matchDuration) {
+        matchDuration.textContent = matchData.matchduration;
+    }
+    
+    if (setsTableBody && matchData.setsbreakdown) {
         let tableHTML = '';
         matchData.setsbreakdown.forEach(set => {
             const blackClass = set.setwinner === 'black' ? 'winner-set' : '';
@@ -661,26 +744,37 @@ function displayWinnerWithData(matchData) {
                 </tr>
             `;
         });
-        DOM.setsTableBody.innerHTML = tableHTML;
+        setsTableBody.innerHTML = tableHTML;
     }
     
-    if (DOM.winnerDisplay) {
-        DOM.winnerDisplay.style.display = 'flex';
-        isScoreboardActive = false; // DISABLE SCORING
+    if (winnerDisplay) {
+        winnerDisplay.style.display = 'flex';
         
+        // Deactivate scoreboard when winner is shown
+        isScoreboardActive = false;
+        
+        // Auto-dismiss after 30 seconds - reset match and go to splash
         clearWinnerTimeout();
-        winnerDismissTimeout = setTimeout(() => resetMatchAndGoToSplash(), 30000);
+        winnerDismissTimeout = setTimeout(() => {
+            console.log('⏱️ Winner screen auto-dismiss (30s) - resetting match and going to splash');
+            resetMatchAndGoToSplash();
+        }, 30000);
+        
+        console.log('🏆 Winner screen displayed with 30s auto-dismiss');
     }
 }
 
 // =================================================================================================
-// RESET FUNCTIONS
+// MATCH RESET
 // =================================================================================================
 async function resetMatch() {
+    console.log('🔄 Reset button clicked - resetting match, mode, and going to splash...');
     await resetMatchAndGoToSplash();
 }
 
+// Update newMatch function to also reset and go to splash
 async function newMatch() {
+    console.log('🆕 New match button clicked - resetting match, mode, and going to splash...');
     await resetMatchAndGoToSplash();
 }
 
