@@ -61,10 +61,10 @@ const API_BASE = "http://127.0.0.1:5000";
 function handleSensorInput(data) {
   const currentTime = Date.now();
   
-  // STATE 1: Winner screen is showing - reset match
+  // STATE 1: Winner screen is showing - ANY sensor action resets match and returns to splash
   const winnerDisplay = document.getElementById('winnerDisplay');
   if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-    console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
+    console.log('🏆 Winner screen visible - ANY sensor action detected (' + data.action + '), resetting match and going to splash');
     clearWinnerTimeout();
     resetMatchAndGoToSplash();
     return;
@@ -75,7 +75,7 @@ function handleSensorInput(data) {
   if (splashScreen && splashScreen.classList.contains('active')) {
     if (data.action === 'addpoint') {
       console.log('✨ Splash screen active - addpoint detected, going to GAME MODE screen');
-      dismissSplash(); // This now goes directly to game mode screen
+      dismissSplash(); // Goes directly to game mode screen
     } else {
       console.log('⏸️ Splash screen active - ignoring non-addpoint action:', data.action);
     }
@@ -118,7 +118,7 @@ function detectAndSelectMode(data, currentTime) {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🏓 Padel Scoreboard Initialized - AUTO SKIPPING TO GAME MODE');
   
-  // Splash will stay until first "addpoint" action
+  // Splash will stay until first "addpoint" action from any team sensor
   
   setupLogo();
   // Start match duration timer
