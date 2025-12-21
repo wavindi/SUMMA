@@ -24,35 +24,7 @@ socket.on('gamestateupdate', (data) => {
 
 socket.on('pointscored', (data) => {
     console.log('🎯 Point scored:', data);
-    
-    // If winner screen is showing, reset match and go to splash
-    const winnerDisplay = document.getElementById('winnerDisplay');
-    if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-        console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
-        clearWinnerTimeout();
-        resetMatchAndGoToSplash();
-        return;
-    }
-    
-    // If splash is showing, dismiss it
-    const splashScreen = document.getElementById('splashScreen');
-    if (splashScreen && splashScreen.classList.contains('active')) {
-        dismissSplash();
-        return;
-    }
-    
-    // NEW: If mode selection is showing, auto-select mode and start match
-    const modeScreen = document.getElementById('modeSelectionScreen');
-    if (modeScreen && modeScreen.style.display === 'flex') {
-        console.log('🎮 Sensor detected - auto-selecting COMPETITION mode');
-        selectMode('competition'); // Auto-select competition mode
-        // Start match timer
-        matchStartTime = Date.now();
-        return;
-    }
-    
-    showClickFeedback(data.team);
-    showToast(data.action, data.team, data.gamestate);
+    handleSensorInput(data);
 });
 
 socket.on('matchwon', (data) => {
@@ -75,8 +47,93 @@ let setsHistory = [];
 let matchStartTime = Date.now();
 let splashDismissed = false;
 let winnerDismissTimeout = null;
+let gameMode = null; // 'basic', 'competition', or null
+let isScoreboardActive = false; // Track if scoreboard is ready for scoring
+
+// Mode detection variables
+let pendingSensorEvents = []; // Store recent sensor events
+const DUAL_SENSOR_WINDOW = 800; // 800ms window to detect both sensors firing
 
 const API_BASE = "http://127.0.0.1:5000";
+
+// =================================================================================================
+// SENSOR INPUT HANDLER WITH MODE DETECTION
+// =================================================================================================
+function handleSensorInput(data) {
+    const currentTime = Date.now();
+    
+    // STATE 1: Winner screen is showing - reset match
+    const winnerDisplay = document.getElementById('winnerDisplay');
+    if (winnerDisplay && winnerDisplay.style.display === 'flex') {
+        console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
+        clearWinnerTimeout();
+        resetMatchAndGoToSplash();
+        return;
+    }
+    
+    // STATE 2: Splash screen is showing - dismiss it (no scoring)
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen && splashScreen.classList.contains('active')) {
+        console.log('✨ Splash screen active - dismissing (no scoring)');
+        dismissSplash();
+        return;
+    }
+    
+    // STATE 3: Mode selection screen - detect mode and select (no scoring)
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen && modeScreen.style.display === 'flex') {
+        console.log('🎮 Mode selection active - detecting mode from sensor pattern');
+        detectAndSelectMode(data, currentTime);
+        return;
+    }
+    
+    // STATE 4: Scoreboard is active - normal scoring
+    if (isScoreboardActive && gameMode) {
+        console.log('📊 Scoreboard active - processing point');
+        showClickFeedback(data.team);
+        showToast(data.action, data.team, data.gamestate);
+    }
+}
+
+// =================================================================================================
+// MODE DETECTION LOGIC
+// =================================================================================================
+function detectAndSelectMode(data, currentTime) {
+    // Add current sensor event to pending list
+    pendingSensorEvents.push({
+        team: data.team,
+        time: currentTime
+    });
+    
+    // Clean up old events (older than detection window)
+    pendingSensorEvents = pendingSensorEvents.filter(event => 
+        currentTime - event.time < DUAL_SENSOR_WINDOW
+    );
+    
+    // Check if we have both sensors within the time window
+    const hasBlack = pendingSensorEvents.some(e => e.team === 'black');
+    const hasYellow = pendingSensorEvents.some(e => e.team === 'yellow');
+    
+    if (hasBlack && hasYellow) {
+        // BOTH sensors fired within window = COMPETITION MODE
+        console.log('🏆 COMPETITION MODE detected (both sensors fired)');
+        selectMode('competition');
+        pendingSensorEvents = []; // Clear events
+    } else if (pendingSensorEvents.length === 1) {
+        // Wait a bit to see if second sensor fires
+        setTimeout(() => {
+            const stillHasOne = pendingSensorEvents.length === 1;
+            const stillOnModeScreen = document.getElementById('modeSelectionScreen').style.display === 'flex';
+            
+            if (stillHasOne && stillOnModeScreen) {
+                // Only ONE sensor fired = BASIC MODE
+                console.log('🎯 BASIC MODE detected (single sensor)');
+                selectMode('basic');
+                pendingSensorEvents = []; // Clear events
+            }
+        }, DUAL_SENSOR_WINDOW);
+    }
+}
 
 // =================================================================================================
 // INITIALIZATION
@@ -135,12 +192,19 @@ function showModeSelection() {
         // Force reflow
         modeScreen.offsetHeight;
         modeScreen.classList.add('active');
-        console.log('🎮 Mode selection screen shown');
+        
+        // Reset pending sensor events when mode selection appears
+        pendingSensorEvents = [];
+        
+        console.log('🎮 Mode selection screen shown - ready for mode detection');
     }
 }
 
 async function selectMode(mode) {
     console.log(`🎯 Mode selected: ${mode}`);
+    
+    // Set game mode
+    gameMode = mode;
     
     // Send mode to backend
     try {
@@ -168,13 +232,15 @@ async function selectMode(mode) {
         modeScreen.classList.remove('active');
         setTimeout(() => {
             modeScreen.style.display = 'none';
+            // Activate scoreboard for scoring AFTER mode screen is hidden
+            isScoreboardActive = true;
+            console.log('✅ Scoreboard now active for scoring');
         }, 500);
     }
     
     // Reset and start match timer
     matchStartTime = Date.now();
     
-    // Show scoreboard (it's already visible in the background)
     console.log('📊 Scoreboard ready - match timer started');
 }
 
@@ -281,7 +347,10 @@ async function resetMatchAndGoToSplash() {
     matchWon = false;
     winnerData = null;
     setsHistory = [];
-    matchStartTime = Date.now(); // Reset timer
+    matchStartTime = Date.now();
+    gameMode = null; // Reset game mode
+    isScoreboardActive = false; // Deactivate scoreboard
+    pendingSensorEvents = []; // Clear pending events
     
     // 4. Hide winner display
     const winnerDisplay = document.getElementById('winnerDisplay');
@@ -372,7 +441,7 @@ function removeToast(toast) {
 }
 
 // =================================================================================================
-// SETUP CLICKABLE TEAMS
+// SETUP CLICKABLE TEAMS (MANUAL MODE SELECTION)
 // =================================================================================================
 function setupClickableTeams() {
     const blackTeam = document.querySelector('.team-section.black-team');
@@ -394,23 +463,27 @@ function setupClickableTeams() {
                 return;
             }
             
-            // If splash is showing, dismiss it first
+            // If splash is showing, dismiss it (no mode selection)
             const splashScreen = document.getElementById('splashScreen');
             if (splashScreen && splashScreen.classList.contains('active')) {
+                console.log('✨ Splash active - dismissing only (no mode selection)');
                 dismissSplash();
                 return;
             }
             
-            // If mode selection is showing, auto-select competition mode
+            // If mode selection is showing, manually select BASIC mode
             const modeScreen = document.getElementById('modeSelectionScreen');
             if (modeScreen && modeScreen.style.display === 'flex') {
-                console.log('🎮 Black team clicked - auto-selecting COMPETITION mode');
-                selectMode('competition');
+                console.log('🎮 Black team clicked on mode screen - selecting BASIC mode');
+                selectMode('basic');
                 return;
             }
             
-            console.log('Black team clicked');
-            addPointManual('black');
+            // If scoreboard is active, add point via control panel
+            if (isScoreboardActive) {
+                console.log('Black team clicked');
+                addPointManual('black');
+            }
         });
         console.log('✅ Black team click listener added');
     }
@@ -431,23 +504,27 @@ function setupClickableTeams() {
                 return;
             }
             
-            // If splash is showing, dismiss it first
+            // If splash is showing, dismiss it (no mode selection)
             const splashScreen = document.getElementById('splashScreen');
             if (splashScreen && splashScreen.classList.contains('active')) {
+                console.log('✨ Splash active - dismissing only (no mode selection)');
                 dismissSplash();
                 return;
             }
             
-            // If mode selection is showing, auto-select competition mode
+            // If mode selection is showing, manually select BASIC mode
             const modeScreen = document.getElementById('modeSelectionScreen');
             if (modeScreen && modeScreen.style.display === 'flex') {
-                console.log('🎮 Yellow team clicked - auto-selecting COMPETITION mode');
-                selectMode('competition');
+                console.log('🎮 Yellow team clicked on mode screen - selecting BASIC mode');
+                selectMode('basic');
                 return;
             }
             
-            console.log('Yellow team clicked');
-            addPointManual('yellow');
+            // If scoreboard is active, add point via control panel
+            if (isScoreboardActive) {
+                console.log('Yellow team clicked');
+                addPointManual('yellow');
+            }
         });
         console.log('✅ Yellow team click listener added');
     }
@@ -672,6 +749,9 @@ function displayWinnerWithData(matchData) {
     
     if (winnerDisplay) {
         winnerDisplay.style.display = 'flex';
+        
+        // Deactivate scoreboard when winner is shown
+        isScoreboardActive = false;
         
         // Auto-dismiss after 30 seconds - reset match and go to splash
         clearWinnerTimeout();
