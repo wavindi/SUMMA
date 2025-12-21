@@ -92,7 +92,7 @@ socket.on('gamestateupdate', (data) => {
 });
 
 socket.on('pointscored', (data) => {
-    console.log('🎯 Point scored:', data);
+    console.log('🎯 Point scored event received:', data);
     handleSensorInput(data);
 });
 
@@ -117,11 +117,11 @@ let matchStartTime = Date.now();
 let splashDismissed = false;
 let winnerDismissTimeout = null;
 let gameMode = null;
-let isScoreboardActive = false;
+let isScoreboardActive = false; // TRUE only when scoreboard is fully visible
 
 // Mode detection variables
 let pendingSensorEvents = [];
-const DUAL_SENSOR_WINDOW = 800;
+const DUAL_SENSOR_WINDOW = 500; // 500ms window to detect dual sensor
 
 // SENSOR DEBOUNCING - Prevents double-firing
 const SENSOR_DEBOUNCE_MS = 100; // 100ms debounce window
@@ -146,74 +146,108 @@ function shouldProcessSensorInput(team) {
 }
 
 // =================================================================================================
-// SENSOR INPUT HANDLER WITH MODE DETECTION
+// SENSOR INPUT HANDLER - PRIORITY BASED ROUTING
 // =================================================================================================
 function handleSensorInput(data) {
     // DEBOUNCE CHECK FIRST
     if (!shouldProcessSensorInput(data.team)) {
-        return; // Ignore debounced input
+        console.log(`🚫 Sensor input IGNORED (debounced): ${data.team}`);
+        return;
     }
     
     const currentTime = Date.now();
     
-    // STATE 1: Winner screen is showing - reset match
+    // ========== STATE 1: WINNER SCREEN ==========
+    // Any sensor input → Reset match and go to splash
     if (DOM.winnerDisplay && DOM.winnerDisplay.style.display === 'flex') {
-        console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
+        console.log('🏆 Winner screen active → Sensor input → Reset and go to splash (NO SCORING)');
         clearWinnerTimeout();
         resetMatchAndGoToSplash();
         return;
     }
     
-    // STATE 2: Splash screen is showing - dismiss it (no scoring)
+    // ========== STATE 2: SPLASH SCREEN ==========
+    // Any sensor input → Dismiss splash and go to mode selection (NO SCORING)
     if (DOM.splashScreen && DOM.splashScreen.classList.contains('active')) {
-        console.log('✨ Splash screen active - dismissing (no scoring)');
+        console.log('✨ Splash screen active → Sensor input → Dismiss and show mode selection (NO SCORING)');
         dismissSplash();
         return;
     }
     
-    // STATE 3: Mode selection screen - detect mode and select (no scoring)
+    // ========== STATE 3: MODE SELECTION SCREEN ==========
+    // Detect mode based on sensor pattern (NO SCORING)
     if (DOM.modeSelectionScreen && DOM.modeSelectionScreen.style.display === 'flex') {
-        console.log('🎮 Mode selection active - detecting mode from sensor pattern');
+        console.log('🎮 Mode selection active → Detecting mode from sensor pattern (NO SCORING)');
         detectAndSelectMode(data, currentTime);
         return;
     }
     
-    // STATE 4: Scoreboard is active - normal scoring
+    // ========== STATE 4: SCOREBOARD ACTIVE ==========
+    // ONLY NOW can points be scored
     if (isScoreboardActive && gameMode) {
-        console.log('📊 Scoreboard active - processing point');
+        console.log(`📊 Scoreboard ACTIVE → Processing point for ${data.team} team`);
         showClickFeedback(data.team);
         showToast(data.action, data.team, data.gamestate);
+    } else {
+        console.log('⚠️ Scoreboard NOT active yet - point NOT counted');
     }
 }
 
 // =================================================================================================
-// MODE DETECTION LOGIC
+// MODE DETECTION LOGIC - Uses sensor patterns to auto-select mode
 // =================================================================================================
 function detectAndSelectMode(data, currentTime) {
+    // Add current sensor event to buffer
     pendingSensorEvents.push({
         team: data.team,
-        time: currentTime
+        time: currentTime,
+        action: data.action
     });
     
+    // Clean up old events outside the detection window
     pendingSensorEvents = pendingSensorEvents.filter(event => 
         currentTime - event.time < DUAL_SENSOR_WINDOW
     );
     
+    console.log(`📊 Pending sensor events: ${pendingSensorEvents.length}`, pendingSensorEvents);
+    
+    // Check for dual sensor firing (both black and yellow within window)
     const hasBlack = pendingSensorEvents.some(e => e.team === 'black');
     const hasYellow = pendingSensorEvents.some(e => e.team === 'yellow');
     
+    // COMPETITION MODE: Both sensors fired within time window
     if (hasBlack && hasYellow) {
-        console.log('🏆 COMPETITION MODE detected (both sensors fired)');
+        console.log('🏆 COMPETITION MODE detected (both sensors fired within 500ms)');
         selectMode('competition');
         pendingSensorEvents = [];
-    } else if (pendingSensorEvents.length === 1) {
+        return;
+    }
+    
+    // Wait for potential second sensor
+    if (pendingSensorEvents.length === 1) {
         setTimeout(() => {
-            const stillHasOne = pendingSensorEvents.length === 1;
-            const stillOnModeScreen = DOM.modeSelectionScreen.style.display === 'flex';
-            
-            if (stillHasOne && stillOnModeScreen) {
-                console.log('🎯 BASIC MODE detected (single sensor)');
-                selectMode('basic');
+            // Still only one sensor after waiting
+            if (pendingSensorEvents.length === 1 && 
+                DOM.modeSelectionScreen && 
+                DOM.modeSelectionScreen.style.display === 'flex') {
+                
+                const event = pendingSensorEvents[0];
+                
+                // BASIC MODE: Single "addpoint" action
+                if (event.action === 'point') {
+                    console.log('🎯 BASIC MODE detected (single sensor addpoint)');
+                    selectMode('basic');
+                } 
+                // COMPETITION MODE: Single "subtractpoint" action
+                else if (event.action === 'subtract') {
+                    console.log('🏆 COMPETITION MODE detected (subtractpoint trigger)');
+                    selectMode('competition');
+                } else {
+                    // Fallback to basic
+                    console.log('🎯 BASIC MODE detected (fallback - single sensor)');
+                    selectMode('basic');
+                }
+                
                 pendingSensorEvents = [];
             }
         }, DUAL_SENSOR_WINDOW);
@@ -277,7 +311,7 @@ function updateMatchDuration() {
 }
 
 // =================================================================================================
-// SPLASH SCREEN
+// SPLASH SCREEN - Auto-dismisses to mode selection
 // =================================================================================================
 function setupSplashScreen() {
     if (!DOM.splashScreen) return;
@@ -295,11 +329,12 @@ function dismissSplash() {
         splashDismissed = true;
         DOM.splashScreen.classList.remove('active');
         
+        // Go directly to mode selection after splash
         setTimeout(() => {
             showModeSelection();
         }, 500);
         
-        console.log('✨ Splash screen dismissed - showing mode selection');
+        console.log('✨ Splash dismissed → Showing mode selection (NO SCORING)');
     }
 }
 
@@ -309,20 +344,22 @@ function dismissSplash() {
 function showModeSelection() {
     if (DOM.modeSelectionScreen) {
         DOM.modeSelectionScreen.style.display = 'flex';
-        DOM.modeSelectionScreen.offsetHeight;
+        DOM.modeSelectionScreen.offsetHeight; // Force reflow
         DOM.modeSelectionScreen.classList.add('active');
         
+        // Clear any pending sensor events when mode selection appears
         pendingSensorEvents = [];
         
-        console.log('🎮 Mode selection screen shown - ready for mode detection');
+        console.log('🎮 Mode selection screen shown - Waiting for mode detection (NO SCORING)');
     }
 }
 
 async function selectMode(mode) {
-    console.log(`🎯 Mode selected: ${mode}`);
+    console.log(`🎯 Mode selected: ${mode} (Scoreboard will activate after mode screen hides)`);
     
     gameMode = mode;
     
+    // Send mode to backend
     try {
         const response = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
@@ -334,7 +371,7 @@ async function selectMode(mode) {
         
         const data = await response.json();
         if (data.success) {
-            console.log(`✅ Game mode set to: ${mode}`);
+            console.log(`✅ Game mode set to: ${mode} on backend`);
         } else {
             console.error('❌ Failed to set game mode:', data.error);
         }
@@ -342,18 +379,22 @@ async function selectMode(mode) {
         console.error('❌ Error setting game mode:', error);
     }
     
+    // Hide mode selection screen
     if (DOM.modeSelectionScreen) {
         DOM.modeSelectionScreen.classList.remove('active');
         setTimeout(() => {
             DOM.modeSelectionScreen.style.display = 'none';
+            
+            // IMPORTANT: Activate scoreboard ONLY after mode screen is hidden
             isScoreboardActive = true;
-            console.log('✅ Scoreboard now active for scoring');
-        }, 500);
+            console.log('✅✅✅ SCOREBOARD NOW ACTIVE - Points can now be scored! ✅✅✅');
+        }, 500); // Wait for fade animation
     }
     
+    // Reset and start match timer
     matchStartTime = Date.now();
     
-    console.log('📊 Scoreboard ready - match timer started');
+    console.log('📊 Scoreboard ready - Match timer started');
 }
 
 // =================================================================================================
@@ -367,7 +408,7 @@ function setupWinnerScreenClickDismiss() {
             }
             
             if (DOM.winnerDisplay.style.display === 'flex') {
-                console.log('👆 Winner screen clicked - resetting match and going to splash');
+                console.log('👆 Winner screen clicked → Reset match and go to splash');
                 clearWinnerTimeout();
                 resetMatchAndGoToSplash();
             }
@@ -386,6 +427,7 @@ function clearWinnerTimeout() {
 async function resetMatchAndGoToSplash() {
     console.log('🔄 Resetting match, mode, and going to splash...');
     
+    // Reset match on backend
     try {
         const resetResponse = await fetch(`${API_BASE}/resetmatch`, {
             method: 'POST',
@@ -404,6 +446,7 @@ async function resetMatchAndGoToSplash() {
         console.error('❌ Error resetting match:', error);
     }
     
+    // Reset game mode on backend
     try {
         const modeResponse = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
@@ -423,7 +466,7 @@ async function resetMatchAndGoToSplash() {
         console.error('❌ Error resetting game mode:', error);
     }
     
-    // Reset local variables
+    // Reset all local variables
     score1 = 0;
     score2 = 0;
     games1 = 0;
@@ -435,10 +478,11 @@ async function resetMatchAndGoToSplash() {
     setsHistory = [];
     matchStartTime = Date.now();
     gameMode = null;
-    isScoreboardActive = false;
+    isScoreboardActive = false; // DEACTIVATE SCOREBOARD
     pendingSensorEvents = [];
-    lastSensorTime = { black: 0, yellow: 0 }; // Reset debounce timers
+    lastSensorTime = { black: 0, yellow: 0 };
     
+    // Hide all screens
     if (DOM.winnerDisplay) {
         DOM.winnerDisplay.style.display = 'none';
     }
@@ -450,11 +494,12 @@ async function resetMatchAndGoToSplash() {
     
     updateDisplay();
     
+    // Reset splash flag and show splash
     splashDismissed = false;
     
     if (DOM.splashScreen) {
         DOM.splashScreen.classList.add('active');
-        console.log('🎬 Match and mode reset complete - splash screen displayed');
+        console.log('🎬 Match reset complete → Splash screen displayed');
     }
 }
 
@@ -517,7 +562,7 @@ function removeToast(toast) {
 }
 
 // =================================================================================================
-// SETUP CLICKABLE TEAMS (MANUAL MODE SELECTION)
+// SETUP CLICKABLE TEAMS
 // =================================================================================================
 function setupClickableTeams() {
     if (DOM.blackTeam) {
@@ -527,28 +572,34 @@ function setupClickableTeams() {
                 return;
             }
             
+            // Winner screen → Reset
             if (DOM.winnerDisplay && DOM.winnerDisplay.style.display === 'flex') {
-                console.log('🏆 Winner screen visible - black side clicked, resetting match and going to splash');
+                console.log('🏆 Winner screen visible → Black clicked → Reset');
                 clearWinnerTimeout();
                 resetMatchAndGoToSplash();
                 return;
             }
             
+            // Splash screen → Dismiss
             if (DOM.splashScreen && DOM.splashScreen.classList.contains('active')) {
-                console.log('✨ Splash active - dismissing only (no mode selection)');
+                console.log('✨ Splash active → Black clicked → Dismiss');
                 dismissSplash();
                 return;
             }
             
+            // Mode selection → Select BASIC
             if (DOM.modeSelectionScreen && DOM.modeSelectionScreen.style.display === 'flex') {
-                console.log('🎮 Black team clicked on mode screen - selecting BASIC mode');
+                console.log('🎮 Mode selection → Black clicked → BASIC mode');
                 selectMode('basic');
                 return;
             }
             
+            // Scoreboard active → Add point
             if (isScoreboardActive) {
-                console.log('Black team clicked');
+                console.log('📊 Scoreboard active → Black clicked → Add point');
                 addPointManual('black');
+            } else {
+                console.log('⚠️ Scoreboard NOT active - click ignored');
             }
         });
         console.log('✅ Black team click listener added');
@@ -561,28 +612,34 @@ function setupClickableTeams() {
                 return;
             }
             
+            // Winner screen → Reset
             if (DOM.winnerDisplay && DOM.winnerDisplay.style.display === 'flex') {
-                console.log('🏆 Winner screen visible - yellow side clicked, resetting match and going to splash');
+                console.log('🏆 Winner screen visible → Yellow clicked → Reset');
                 clearWinnerTimeout();
                 resetMatchAndGoToSplash();
                 return;
             }
             
+            // Splash screen → Dismiss
             if (DOM.splashScreen && DOM.splashScreen.classList.contains('active')) {
-                console.log('✨ Splash active - dismissing only (no mode selection)');
+                console.log('✨ Splash active → Yellow clicked → Dismiss');
                 dismissSplash();
                 return;
             }
             
+            // Mode selection → Select BASIC
             if (DOM.modeSelectionScreen && DOM.modeSelectionScreen.style.display === 'flex') {
-                console.log('🎮 Yellow team clicked on mode screen - selecting BASIC mode');
+                console.log('🎮 Mode selection → Yellow clicked → BASIC mode');
                 selectMode('basic');
                 return;
             }
             
+            // Scoreboard active → Add point
             if (isScoreboardActive) {
-                console.log('Yellow team clicked');
+                console.log('📊 Scoreboard active → Yellow clicked → Add point');
                 addPointManual('yellow');
+            } else {
+                console.log('⚠️ Scoreboard NOT active - click ignored');
             }
         });
         console.log('✅ Yellow team click listener added');
@@ -792,11 +849,13 @@ function displayWinnerWithData(matchData) {
     if (DOM.winnerDisplay) {
         DOM.winnerDisplay.style.display = 'flex';
         
+        // Deactivate scoreboard when winner is shown
         isScoreboardActive = false;
+        console.log('🏆 Winner displayed - Scoreboard DEACTIVATED');
         
         clearWinnerTimeout();
         winnerDismissTimeout = setTimeout(() => {
-            console.log('⏱️ Winner screen auto-dismiss (30s) - resetting match and going to splash');
+            console.log('⏱️ Winner screen auto-dismiss (30s) - resetting match');
             resetMatchAndGoToSplash();
         }, 30000);
         
@@ -808,12 +867,12 @@ function displayWinnerWithData(matchData) {
 // MATCH RESET
 // =================================================================================================
 async function resetMatch() {
-    console.log('🔄 Reset button clicked - resetting match, mode, and going to splash...');
+    console.log('🔄 Reset button clicked - resetting match');
     await resetMatchAndGoToSplash();
 }
 
 async function newMatch() {
-    console.log('🆕 New match button clicked - resetting match, mode, and going to splash...');
+    console.log('🆕 New match button clicked - resetting match');
     await resetMatchAndGoToSplash();
 }
 
