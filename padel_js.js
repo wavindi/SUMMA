@@ -38,6 +38,17 @@ socket.on('pointscored', (data) => {
     const splashScreen = document.getElementById('splashScreen');
     if (splashScreen && splashScreen.classList.contains('active')) {
         dismissSplash();
+        return;
+    }
+    
+    // NEW: If mode selection is showing, auto-select mode and start match
+    const modeScreen = document.getElementById('modeSelectionScreen');
+    if (modeScreen && modeScreen.style.display === 'flex') {
+        console.log('🎮 Sensor detected - auto-selecting COMPETITION mode');
+        selectMode('competition'); // Auto-select competition mode
+        // Start match timer
+        matchStartTime = Date.now();
+        return;
     }
     
     showClickFeedback(data.team);
@@ -58,7 +69,6 @@ let games1 = 0;
 let games2 = 0;
 let sets1 = 0;
 let sets2 = 0;
-let time = "19:22";
 let matchWon = false;
 let winnerData = null;
 let setsHistory = [];
@@ -76,8 +86,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setupSplashScreen();
     setupLogo();
-    updateTime();
-    setInterval(updateTime, 1000);
+    
+    // Start match duration timer
+    updateMatchDuration();
+    setInterval(updateMatchDuration, 1000);
+    
     setupClickableTeams();
     setupWinnerScreenClickDismiss();
 });
@@ -133,7 +146,9 @@ async function selectMode(mode) {
     try {
         const response = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ mode: mode })
         });
         
@@ -156,8 +171,32 @@ async function selectMode(mode) {
         }, 500);
     }
     
+    // Reset and start match timer
+    matchStartTime = Date.now();
+    
     // Show scoreboard (it's already visible in the background)
-    console.log('📊 Scoreboard ready');
+    console.log('📊 Scoreboard ready - match timer started');
+}
+
+// =================================================================================================
+// MATCH DURATION TIMER (REPLACES CLOCK)
+// =================================================================================================
+function updateMatchDuration() {
+    const now = Date.now();
+    const elapsed = now - matchStartTime;
+    
+    // Convert to minutes and seconds
+    const totalSeconds = Math.floor(elapsed / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    // Format as MM:SS
+    const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    const timeEl = document.getElementById('timeDisplay');
+    if (timeEl) {
+        timeEl.textContent = formattedTime;
+    }
 }
 
 // =================================================================================================
@@ -165,7 +204,6 @@ async function selectMode(mode) {
 // =================================================================================================
 function setupWinnerScreenClickDismiss() {
     const winnerDisplay = document.getElementById('winnerDisplay');
-    
     if (winnerDisplay) {
         winnerDisplay.addEventListener('click', function(e) {
             // Don't close if clicking on buttons
@@ -180,7 +218,6 @@ function setupWinnerScreenClickDismiss() {
                 resetMatchAndGoToSplash();
             }
         });
-        
         console.log('✅ Winner screen click-to-dismiss enabled');
     }
 }
@@ -199,9 +236,11 @@ async function resetMatchAndGoToSplash() {
     try {
         const resetResponse = await fetch(`${API_BASE}/resetmatch`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
-
+        
         const resetData = await resetResponse.json();
         if (resetData.success) {
             console.log('✅ Match reset successfully on backend');
@@ -216,10 +255,12 @@ async function resetMatchAndGoToSplash() {
     try {
         const modeResponse = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ mode: null })
         });
-
+        
         const modeData = await modeResponse.json();
         if (modeData.success) {
             console.log('✅ Game mode reset successfully on backend');
@@ -240,7 +281,7 @@ async function resetMatchAndGoToSplash() {
     matchWon = false;
     winnerData = null;
     setsHistory = [];
-    matchStartTime = Date.now();
+    matchStartTime = Date.now(); // Reset timer
     
     // 4. Hide winner display
     const winnerDisplay = document.getElementById('winnerDisplay');
@@ -275,13 +316,13 @@ async function resetMatchAndGoToSplash() {
 function showToast(action, team, gameState) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
-
+    
     const teamName = team === 'black' ? 'BLACK' : 'YELLOW';
     let icon = '🎯';
     let title = 'POINT SCORED';
     let message = `${teamName} team scored!`;
     let toastType = 'toast-point';
-
+    
     if (action === 'game') {
         icon = '🎾';
         title = 'GAME WON';
@@ -298,7 +339,7 @@ function showToast(action, team, gameState) {
         message = `${teamName} wins the match!`;
         toastType = 'toast-match';
     }
-
+    
     const toast = document.createElement('div');
     toast.className = `toast ${toastType}`;
     toast.innerHTML = `
@@ -309,13 +350,13 @@ function showToast(action, team, gameState) {
         </div>
         <div class="toast-close">×</div>
     `;
-
+    
     container.appendChild(toast);
-
+    
     // Close button
     const closeBtn = toast.querySelector('.toast-close');
     closeBtn.addEventListener('click', () => removeToast(toast));
-
+    
     // Auto-remove after duration based on type
     const duration = action === 'match' ? 8000 : action === 'set' ? 5000 : action === 'game' ? 4000 : 3000;
     setTimeout(() => removeToast(toast), duration);
@@ -336,11 +377,13 @@ function removeToast(toast) {
 function setupClickableTeams() {
     const blackTeam = document.querySelector('.team-section.black-team');
     const yellowTeam = document.querySelector('.team-section.yellow-team');
-
+    
     if (blackTeam) {
         blackTeam.style.cursor = 'pointer';
         blackTeam.addEventListener('click', function(e) {
-            if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) return;
+            if (e.target.closest('#logoClick') || e.target.closest('#controlPanel')) {
+                return;
+            }
             
             // If winner screen is showing, reset match and go to splash
             const winnerDisplay = document.getElementById('winnerDisplay');
@@ -358,16 +401,26 @@ function setupClickableTeams() {
                 return;
             }
             
-            console.log('⚫ Black team clicked');
+            // If mode selection is showing, auto-select competition mode
+            const modeScreen = document.getElementById('modeSelectionScreen');
+            if (modeScreen && modeScreen.style.display === 'flex') {
+                console.log('🎮 Black team clicked - auto-selecting COMPETITION mode');
+                selectMode('competition');
+                return;
+            }
+            
+            console.log('Black team clicked');
             addPointManual('black');
         });
         console.log('✅ Black team click listener added');
     }
-
+    
     if (yellowTeam) {
         yellowTeam.style.cursor = 'pointer';
         yellowTeam.addEventListener('click', function(e) {
-            if (e.target.closest('#controlPanel')) return;
+            if (e.target.closest('#controlPanel')) {
+                return;
+            }
             
             // If winner screen is showing, reset match and go to splash
             const winnerDisplay = document.getElementById('winnerDisplay');
@@ -385,7 +438,15 @@ function setupClickableTeams() {
                 return;
             }
             
-            console.log('🟡 Yellow team clicked');
+            // If mode selection is showing, auto-select competition mode
+            const modeScreen = document.getElementById('modeSelectionScreen');
+            if (modeScreen && modeScreen.style.display === 'flex') {
+                console.log('🎮 Yellow team clicked - auto-selecting COMPETITION mode');
+                selectMode('competition');
+                return;
+            }
+            
+            console.log('Yellow team clicked');
             addPointManual('yellow');
         });
         console.log('✅ Yellow team click listener added');
@@ -399,18 +460,22 @@ function setupLogo() {
     const logo = document.getElementById('logoClick');
     const logoImg = document.getElementById('logoImg');
     const controlPanel = document.getElementById('controlPanel');
-
+    
     if (logoImg) {
         logoImg.onload = function() {
             console.log('✅ Logo image loaded');
-            if (logo) logo.classList.remove('no-image');
+            if (logo) {
+                logo.classList.remove('no-image');
+            }
         };
-
+        
         logoImg.onerror = function() {
             console.log('⚠️ Logo image failed, using fallback');
-            if (logo) logo.classList.add('no-image');
+            if (logo) {
+                logo.classList.add('no-image');
+            }
         };
-
+        
         if (logoImg.complete) {
             if (logoImg.naturalWidth === 0) {
                 logoImg.onerror();
@@ -419,7 +484,7 @@ function setupLogo() {
             }
         }
     }
-
+    
     if (logo) {
         logo.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -437,21 +502,6 @@ function setupLogo() {
 }
 
 // =================================================================================================
-// TIME UPDATE
-// =================================================================================================
-function updateTime() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    time = `${hours}:${minutes}`;
-    
-    const timeEl = document.getElementById('timeDisplay');
-    if (timeEl) {
-        timeEl.textContent = time;
-    }
-}
-
-// =================================================================================================
 // GAME STATE UPDATE FROM SOCKET.IO
 // =================================================================================================
 function updateFromGameState(gameState) {
@@ -462,18 +512,18 @@ function updateFromGameState(gameState) {
     sets1 = gameState.set1;
     sets2 = gameState.set2;
     matchWon = gameState.matchwon;
-
+    
     updateDisplay();
-
+    
     if (gameState.matchwon && gameState.winner) {
         winnerData = gameState.winner;
         fetchMatchDataAndDisplay();
     }
-
+    
     if (gameState.sethistory && gameState.sethistory.length > 0) {
         setsHistory = gameState.sethistory.map(setScore => {
             const [blackGames, yellowGames] = setScore.split('-').map(Number);
-            return [blackGames, yellowGames];
+            return { blackGames, yellowGames };
         });
     }
 }
@@ -485,14 +535,14 @@ function updateDisplay() {
     const gamesYellow = document.getElementById('gamesYellow');
     const setsBlackEl = document.getElementById('setsBlack');
     const setsYellowEl = document.getElementById('setsYellow');
-
+    
     if (scoreBlack) scoreBlack.textContent = score1;
     if (scoreYellow) scoreYellow.textContent = score2;
     if (gamesBlack) gamesBlack.textContent = games1;
     if (gamesYellow) gamesYellow.textContent = games2;
     if (setsBlackEl) setsBlackEl.textContent = sets1;
     if (setsYellowEl) setsYellowEl.textContent = sets2;
-
+    
     console.log(`📊 Display updated - Score: ${score1}-${score2} | Games: ${games1}-${games2} | Sets: ${sets1}-${sets2}`);
 }
 
@@ -505,10 +555,12 @@ async function addPointManual(team) {
     try {
         const response = await fetch(`${API_BASE}/addpoint`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ team: team })
         });
-
+        
         const data = await response.json();
         if (data.success) {
             console.log('✅ Point added successfully');
@@ -519,7 +571,7 @@ async function addPointManual(team) {
         }
     } catch (error) {
         console.error('❌ Error adding point:', error);
-        alert(`Network error: ${error.message}`);
+        alert('Network error: ' + error.message);
     }
 }
 
@@ -529,10 +581,12 @@ async function subtractPoint(team) {
     try {
         const response = await fetch(`${API_BASE}/subtractpoint`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ team: team })
         });
-
+        
         const data = await response.json();
         if (data.success) {
             console.log('✅ Point subtracted successfully');
@@ -542,7 +596,7 @@ async function subtractPoint(team) {
         }
     } catch (error) {
         console.error('❌ Error subtracting point:', error);
-        alert(`Network error: ${error.message}`);
+        alert('Network error: ' + error.message);
     }
 }
 
@@ -585,20 +639,20 @@ function displayWinnerWithData(matchData) {
     const finalSetsScore = document.getElementById('finalSetsScore');
     const matchDuration = document.getElementById('matchDuration');
     const setsTableBody = document.getElementById('setsTableBody');
-
+    
     if (winnerTeamName) {
         winnerTeamName.textContent = matchData.winnername;
         winnerTeamName.className = `winner-team-name ${matchData.winnerteam}`;
     }
-
+    
     if (finalSetsScore) {
         finalSetsScore.textContent = matchData.finalsetsscore;
     }
-
+    
     if (matchDuration) {
         matchDuration.textContent = matchData.matchduration;
     }
-
+    
     if (setsTableBody && matchData.setsbreakdown) {
         let tableHTML = '';
         matchData.setsbreakdown.forEach(set => {
@@ -615,7 +669,7 @@ function displayWinnerWithData(matchData) {
         });
         setsTableBody.innerHTML = tableHTML;
     }
-
+    
     if (winnerDisplay) {
         winnerDisplay.style.display = 'flex';
         
