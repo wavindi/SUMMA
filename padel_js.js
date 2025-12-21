@@ -70,11 +70,15 @@ function handleSensorInput(data) {
     return;
   }
   
-  // STATE 2: Splash screen is showing - go directly to GAME MODE screen (NO SCORING)
+  // STATE 2: Splash screen is showing - ONLY dismiss on "addpoint" action
   const splashScreen = document.getElementById('splashScreen');
   if (splashScreen && splashScreen.classList.contains('active')) {
-    console.log('✨ Splash screen active - going to GAME MODE screen (NO SCORING)');
-    dismissSplash(); // This now goes directly to game mode screen
+    if (data.action === 'addpoint') {
+      console.log('✨ Splash screen active - addpoint detected, going to GAME MODE screen');
+      dismissSplash(); // This now goes directly to game mode screen
+    } else {
+      console.log('⏸️ Splash screen active - ignoring non-addpoint action:', data.action);
+    }
     return;
   }
   
@@ -114,11 +118,7 @@ function detectAndSelectMode(data, currentTime) {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🏓 Padel Scoreboard Initialized - AUTO SKIPPING TO GAME MODE');
   
-  // AUTO-SKIP: Go directly to game mode screen after brief splash
-  setTimeout(() => {
-    console.log('🚀 Auto-skipping splash - going directly to game mode screen');
-    dismissSplash();
-  }, 1000); // 1 second splash for branding, then auto-advance
+  // Splash will stay until first "addpoint" action
   
   setupLogo();
   // Start match duration timer
