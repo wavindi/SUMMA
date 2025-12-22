@@ -32,6 +32,11 @@ socket.on('matchwon', (data) => {
   displayWinner(data);
 });
 
+socket.on('sideswitchrequired', (data) => {
+  console.log('🔄 Side switch required:', data);
+  handleSideSwitch(data);
+});
+
 // =================================================================================================
 // GAME VARIABLES
 // =================================================================================================
@@ -58,7 +63,7 @@ const API_BASE = "http://127.0.0.1:5000";
 // =================================================================================================
 // SENSOR INPUT HANDLER WITH MODE DETECTION - MODIFIED FOR NEW FLOW
 // =================================================================================================
-async function handleSensorInput(data) {
+function handleSensorInput(data) {
   const currentTime = Date.now();
   
   // STATE 1: Winner screen is showing - reset match
@@ -66,19 +71,15 @@ async function handleSensorInput(data) {
   if (winnerDisplay && winnerDisplay.style.display === 'flex') {
     console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
     clearWinnerTimeout();
-    await resetMatchAndGoToSplash();
+    resetMatchAndGoToSplash();
     return;
   }
   
-  // STATE 2: Splash screen is showing - ONLY dismiss on "addpoint" action
+  // STATE 2: Splash screen is showing - go directly to GAME MODE screen (NO SCORING)
   const splashScreen = document.getElementById('splashScreen');
   if (splashScreen && splashScreen.classList.contains('active')) {
-    if (data.action === 'addpoint') {
-      console.log('✨ Splash screen active - addpoint detected, dismissing to GAME MODE screen');
-      dismissSplash();
-    } else {
-      console.log('⏸️ Splash screen active - ignoring non-addpoint action:', data.action);
-    }
+    console.log('✨ Splash screen active - going to GAME MODE screen (NO SCORING)');
+    dismissSplash(); // This now goes directly to game mode screen
     return;
   }
   
@@ -104,6 +105,91 @@ async function handleSensorInput(data) {
   }
 }
 
+
+// =================================================================================================
+// SIDE SWITCH HANDLER
+// =================================================================================================
+function handleSideSwitch(data) {
+  console.log(`🔄 CHANGE SIDES - Total games: ${data.totalgames}, Score: ${data.gamescore} (Sets: ${data.setscore})`);
+
+  // Display visual notification to change sides
+  showSideSwitchNotification(data);
+
+  // Send signal to backend to swap sensors (BLACK ↔ YELLOW)
+  // The sensor swap happens in your SUMMA system
+  sendSensorSwapCommand();
+
+  // Acknowledge the side switch to backend after 5 seconds
+  setTimeout(() => {
+    socket.emit('acknowledge_side_switch');
+    console.log('✅ Side switch acknowledged to backend');
+  }, 5000);
+}
+
+function showSideSwitchNotification(data) {
+  // Create visual notification overlay
+  const notification = document.createElement('div');
+  notification.id = 'sideSwitchNotification';
+  notification.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease-in;
+  `;
+
+  notification.innerHTML = `
+    <div style="text-align: center; color: white;">
+      <div style="font-size: 80px; margin-bottom: 20px;">🔄</div>
+      <div style="font-size: 48px; font-weight: bold; margin-bottom: 10px;">CHANGE SIDES</div>
+      <div style="font-size: 24px; opacity: 0.8;">Games: ${data.gamescore}</div>
+      <div style="font-size: 24px; opacity: 0.8;">Sets: ${data.setscore}</div>
+      <div style="font-size: 18px; margin-top: 30px; opacity: 0.6;">Sensors swapping...</div>
+    </div>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    notification.style.animation = 'fadeOut 0.3s ease-out';
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.parentElement.removeChild(notification);
+      }
+    }, 300);
+  }, 5000);
+}
+
+function sendSensorSwapCommand() {
+  console.log('📡 Sending sensor swap command...');
+
+  // Send HTTP request to swap sensors BLACK ↔ YELLOW
+  // This tells the Raspberry Pi to swap which sensor is which team
+  fetch(`${API_BASE}/swapsensors`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      console.log('✅ Sensors swapped successfully:', data);
+    } else {
+      console.error('❌ Failed to swap sensors:', data.error);
+    }
+  })
+  .catch(error => {
+    console.error('❌ Error swapping sensors:', error);
+  });
+}
+
 // =================================================================================================
 // MODE DETECTION LOGIC - SIMPLIFIED (no longer needed for sensor detection)
 // =================================================================================================
@@ -118,7 +204,11 @@ function detectAndSelectMode(data, currentTime) {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🏓 Padel Scoreboard Initialized - AUTO SKIPPING TO GAME MODE');
   
-  // MODIFIED: Splash stays visible until first "addpoint" action
+  // AUTO-SKIP: Go directly to game mode screen after brief splash
+  setTimeout(() => {
+    console.log('🚀 Auto-skipping splash - going directly to game mode screen');
+    dismissSplash();
+  }, 1000); // 1 second splash for branding, then auto-advance
   
   setupLogo();
   // Start match duration timer
