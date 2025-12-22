@@ -171,19 +171,28 @@ document.addEventListener('DOMContentLoaded', function() {
 // =================================================================================================
 // SPLASH SCREEN
 // =================================================================================================
+
 function dismissSplash() {
     if (!splashDismissed) {
         splashDismissed = true;
         const splashScreen = document.getElementById('splashScreen');
+        const scoreboard = document.querySelector('.scoreboard');
+        
+        // ✅ FIXED: Hide scoreboard IMMEDIATELY before splash fades
+        if (scoreboard) {
+            scoreboard.classList.add('hidden');
+        }
+        
         splashScreen.classList.remove('active');
         
         setTimeout(() => {
             showModeSelection();
         }, 300);
         
-        console.log('✨ Splash dismissed - showing GAME MODE screen');
+        console.log('✨ Splash dismissed - scoreboard hidden immediately');
     }
 }
+
 
 // =================================================================================================
 // MODE SELECTION SCREEN
