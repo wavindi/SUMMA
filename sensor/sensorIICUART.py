@@ -258,7 +258,7 @@ def send_action_http(team, action, detection_time):
                 response_data = response.json()
 
                 # --- SIDE SWITCH HANDLING (DETECTION + NOTIFICATION + AUTO SWAP) ---
-                side_switch = response_data.get('side_switch')
+                side_switch = response_data.get('sideswitch')
                 if side_switch:
                     print(f"🔄 [{timestamp_confirm}] SIDE SWITCH REQUIRED!")
                     print(f" Total games played: {side_switch.get('total_games')}")
