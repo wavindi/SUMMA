@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Padel Scoreboard Backend - Optimized with Game Modes and pre-mode gating
-
 Key behavior:
 - All addpoint/subtractpoint are IGNORED for scoring until a game mode is chosen (gamemode is None).
 - While gamemode is None:
@@ -115,26 +114,21 @@ game_state = {
     "set1": 0, "set2": 0,
     "point1": 0, "point2": 0,
     "score1": 0, "score2": 0,
-
     # Status
     "matchwon": False,
     "winner": None,
-
     # History
     "sethistory": [],
     "matchhistory": [],
     "matchstarttime": datetime.now().isoformat(),
     "matchendtime": None,
     "lastupdated": datetime.now().isoformat(),
-
     # Side switching
     "shouldswitchsides": False,
     "totalgamesinset": 0,
     "initial_switch_done": False,
-
     # Game phase mode: "normal", "tiebreak", "supertiebreak"
     "mode": "normal",
-
     # Game mode selection (UI mode): "basic", "competition", "lock", or None until chosen
     "gamemode": None
 }
@@ -156,18 +150,14 @@ match_storage = {
 }
 
 # ===== SENSOR MAPPING (for side switching) =====
-# CORRECTED: Using actual sensor setup - 0x29 (local) + Pico UART (remote 40m)
 sensor_mapping = {
-    "sensor_local_0x29": "black",   # Local I2C sensor at 0x29 directly on Pi
-    "sensor_pico_uart": "yellow",   # Remote sensor via Pico through UART/RJ45
+    "sensor_local_0x29": "black",
+    "sensor_pico_uart": "yellow",
     "last_swap": None
 }
 
 def get_team_from_sensor(sensor_id):
-    """
-    Returns the current team assignment for a given sensor.
-    sensor_id: "local" (for 0x29) or "pico" (for UART sensor)
-    """
+    """Returns the current team assignment for a given sensor."""
     if sensor_id == "local":
         return sensor_mapping["sensor_local_0x29"]
     elif sensor_id == "pico":
@@ -177,14 +167,16 @@ def get_team_from_sensor(sensor_id):
 
 # ===== SIDE SWITCHING =====
 def trigger_basic_mode_side_switch_if_needed():
-    """BASIC MODE: Trigger side switch immediately when a new set starts (0-0 at sets 0-0, 1-0, 0-1, 1-1)."""
+    """BASIC MODE: Trigger side switch immediately when a new set starts."""
     global game_state
     if game_state["gamemode"] != "basic":
         return
+
     total_games = game_state["game1"] + game_state["game2"]
     set1 = game_state["set1"]
     set2 = game_state["set2"]
     total_sets = set1 + set2
+
     if (total_games == 0 and total_sets in [0, 1, 2] and not game_state.get("initial_switch_done", False)):
         game_state["initial_switch_done"] = True
         game_state["shouldswitchsides"] = True
@@ -197,19 +189,20 @@ def check_side_switch():
     global game_state
     total_games = game_state["game1"] + game_state["game2"]
     mode = game_state["gamemode"]
+
     if mode == "basic":
         return False
+
     # competition/lock
     if (total_games % 2) == 1:
         game_state["shouldswitchsides"] = True
         game_state["totalgamesinset"] = total_games
         return True
+
     game_state["shouldswitchsides"] = False
     return False
 
-def acknowledge_side_switch():
-    global game_state
-    game_state["shouldswitchsides"] = False
+# ✅ FIXED: Removed acknowledge_side_switch function - flag now cleared in process_add_point
 
 # ===== SOCKET.IO HANDLERS =====
 @socketio.on('connect')
@@ -233,11 +226,7 @@ def handle_request_gamestate():
 def handle_request_sensor_validation():
     emit('sensor_validation_result', sensor_validation)
 
-@socketio.on('acknowledge_side_switch')
-def handle_acknowledge_side_switch():
-    acknowledge_side_switch()
-    print("✓ Side switch acknowledged by client")
-    emit('side_switch_acknowledged', {"success": True})
+# ✅ FIXED: Removed acknowledge_side_switch socket handler
 
 # ===== BROADCAST HELPERS =====
 def broadcast_gamestate():
@@ -386,8 +375,8 @@ def check_set_winner():
         game_state["set1"] += 1
         game_state["sethistory"].append(f"{g1}-{g2}")
         add_to_history("set", "black",
-                       (game_state["score1"], game_state["score2"]), (0, 0),
-                       (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]), (0, 0),
+                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
         game_state["game1"] = 0
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
@@ -402,8 +391,8 @@ def check_set_winner():
         game_state["set2"] += 1
         game_state["sethistory"].append(f"{g1}-{g2}")
         add_to_history("set", "yellow",
-                       (game_state["score1"], game_state["score2"]), (0, 0),
-                       (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]), (0, 0),
+                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
         game_state["game1"] = 0
         game_state["game2"] = 0
         game_state["totalgamesinset"] = 0
@@ -429,13 +418,14 @@ def check_set_winner():
             game_state["point2"] = 0
             game_state["score1"] = 0
             game_state["score2"] = 0
-    return False
+        return False
 
 def check_match_winner():
     global game_state
     if game_state["set1"] == 2:
         game_state["matchwon"] = True
         game_state["matchendtime"] = datetime.now().isoformat()
+
         total_black_games = 0
         total_yellow_games = 0
         for set_score in game_state["sethistory"]:
@@ -445,6 +435,7 @@ def check_match_winner():
                 total_yellow_games += int(parts[1].split("(")[0])
         total_black_games += game_state["game1"]
         total_yellow_games += game_state["game2"]
+
         game_state["winner"] = {
             "team": "black",
             "teamname": "BLACK TEAM",
@@ -454,18 +445,19 @@ def check_match_winner():
             "matchduration": calculate_match_duration()
         }
         add_to_history("match", "black",
-                       (game_state["score1"], game_state["score2"]),
-                       (game_state["score1"], game_state["score2"]),
-                       (game_state["game1"], game_state["game2"]),
-                       (game_state["game1"], game_state["game2"]),
-                       (game_state["set1"], game_state["set2"]),
-                       (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]),
+                      (game_state["score1"], game_state["score2"]),
+                      (game_state["game1"], game_state["game2"]),
+                      (game_state["game1"], game_state["game2"]),
+                      (game_state["set1"], game_state["set2"]),
+                      (game_state["set1"], game_state["set2"]))
         store_match_data()
         return True
 
     if game_state["set2"] == 2:
         game_state["matchwon"] = True
         game_state["matchendtime"] = datetime.now().isoformat()
+
         total_black_games = 0
         total_yellow_games = 0
         for set_score in game_state["sethistory"]:
@@ -475,6 +467,7 @@ def check_match_winner():
                 total_yellow_games += int(parts[1].split("(")[0])
         total_black_games += game_state["game1"]
         total_yellow_games += game_state["game2"]
+
         game_state["winner"] = {
             "team": "yellow",
             "teamname": "YELLOW TEAM",
@@ -484,12 +477,12 @@ def check_match_winner():
             "matchduration": calculate_match_duration()
         }
         add_to_history("match", "yellow",
-                       (game_state["score1"], game_state["score2"]),
-                       (game_state["score1"], game_state["score2"]),
-                       (game_state["game1"], game_state["game2"]),
-                       (game_state["game1"], game_state["game2"]),
-                       (game_state["set1"], game_state["set2"]),
-                       (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]),
+                      (game_state["score1"], game_state["score2"]),
+                      (game_state["game1"], game_state["game2"]),
+                      (game_state["game1"], game_state["game2"]),
+                      (game_state["set1"], game_state["set2"]),
+                      (game_state["set1"], game_state["set2"]))
         store_match_data()
         return True
 
@@ -542,14 +535,14 @@ def handle_tiebreak_win(team):
         game_state["set1"] += 1
         game_state["sethistory"].append(f"7-6{tb_score}")
         add_to_history("set", "black",
-                       (game_state["score1"], game_state["score2"]), (0, 0),
-                       (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]), (0, 0),
+                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
     else:
         game_state["set2"] += 1
         game_state["sethistory"].append(f"6-7{tb_score}")
         add_to_history("set", "yellow",
-                       (game_state["score1"], game_state["score2"]), (0, 0),
-                       (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]), (0, 0),
+                      (g1, g2), (0, 0), set_before, (game_state["set1"], game_state["set2"]))
 
     game_state["game1"] = 0
     game_state["game2"] = 0
@@ -564,20 +557,21 @@ def handle_tiebreak_win(team):
 
 def handle_supertiebreak_win(team):
     set_before = (game_state["set1"], game_state["set2"])
+
     if team == "black":
         game_state["set1"] += 1
         game_state["sethistory"].append(f"10-{game_state['point2']}(STB)")
         add_to_history("set", "black",
-                       (game_state["score1"], game_state["score2"]), (0, 0),
-                       (game_state["game1"], game_state["game2"]), (0, 0),
-                       set_before, (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]), (0, 0),
+                      (game_state["game1"], game_state["game2"]), (0, 0),
+                      set_before, (game_state["set1"], game_state["set2"]))
     else:
         game_state["set2"] += 1
         game_state["sethistory"].append(f"{game_state['point1']}-10(STB)")
         add_to_history("set", "yellow",
-                       (game_state["score1"], game_state["score2"]), (0, 0),
-                       (game_state["game1"], game_state["game2"]), (0, 0),
-                       set_before, (game_state["set1"], game_state["set2"]))
+                      (game_state["score1"], game_state["score2"]), (0, 0),
+                      (game_state["game1"], game_state["game2"]), (0, 0),
+                      set_before, (game_state["set1"], game_state["set2"]))
 
     game_state["initial_switch_done"] = False
     reset_points()
@@ -591,7 +585,8 @@ def scoring_gamemode_selected():
 
 def process_add_point(team):
     global game_state
-    # PRE-MODE GATING: ignore scoring until mode chosen, but emit lightweight signal
+
+    # PRE-MODE GATING
     if not scoring_gamemode_selected():
         broadcast_pointscored(team, "addpoint")
         return {"success": True, "ignored": True, "message": "Point ignored until mode is selected", "gamestate": game_state}
@@ -628,7 +623,6 @@ def process_add_point(team):
                 handle_normal_game_win("yellow")
                 action_type = "game"
                 game_just_won = True
-
     elif phase_mode == "tiebreak":
         game_state["score1"] = game_state["point1"]
         game_state["score2"] = game_state["point2"]
@@ -640,7 +634,6 @@ def process_add_point(team):
             if p2 >= 7 and p2 - p1 >= 2:
                 handle_tiebreak_win("yellow")
                 action_type = "set"
-
     elif phase_mode == "supertiebreak":
         game_state["score1"] = game_state["point1"]
         game_state["score2"] = game_state["point2"]
@@ -655,26 +648,26 @@ def process_add_point(team):
 
     if not game_state["matchwon"]:
         add_to_history(action_type, team,
-                       score_before, (game_state["score1"], game_state["score2"]),
-                       game_before, (game_state["game1"], game_state["game2"]),
-                       set_before, (game_state["set1"], game_state["set2"]))
+                      score_before, (game_state["score1"], game_state["score2"]),
+                      game_before, (game_state["game1"], game_state["game2"]),
+                      set_before, (game_state["set1"], game_state["set2"]))
 
     game_state["lastupdated"] = datetime.now().isoformat()
 
     sideswitchneeded = False
     if game_just_won and not game_state["matchwon"] and game_state["mode"] == "normal":
         sideswitchneeded = check_side_switch()
-    
+
     if sideswitchneeded:
         broadcast_sideswitch()
-    
+
     broadcast_gamestate()
-    
+
     if game_state["matchwon"]:
         broadcast_matchwon()
     else:
         broadcast_pointscored(team, action_type)
-    
+
     response = {
         "success": True,
         "message": f"Point added to team {team}",
@@ -682,9 +675,9 @@ def process_add_point(team):
         "matchwon": game_state["matchwon"],
         "winner": game_state["winner"] if game_state["matchwon"] else None
     }
-    
-    # ✅ FIX: Include side_switch in response whenever shouldswitchsides is True
-    # This ensures Basic mode (start-of-set) swaps reach the Python sensor process
+
+    # ✅ FIXED: Include side_switch in response whenever shouldswitchsides is True
+    # This catches both Basic mode (start-of-set) and Competition/Lock (odd games)
     if game_state["shouldswitchsides"]:
         response["sideswitch"] = {
             "required": True,
@@ -692,15 +685,16 @@ def process_add_point(team):
             "gamescore": f"{game_state['game1']}-{game_state['game2']}",
             "setscore": f"{game_state['set1']}-{game_state['set2']}",
         }
-    
-    return response
+        # ✅ FIXED: Clear flag AFTER including it in response
+        game_state["shouldswitchsides"] = False
+        print(f"✅ Side switch signal sent in HTTP response, flag cleared")
 
+    return response
 
 def process_subtract_point(team):
     """Simple subtraction of internal raw point; no undo of games/sets."""
     global game_state
 
-    # PRE-MODE GATING: ignore subtraction until mode chosen, but emit lightweight signal for UI
     if not scoring_gamemode_selected():
         broadcast_pointscored(team, "subtractpoint")
         return {"success": True, "ignored": True, "message": "Subtraction ignored until mode is selected", "gamestate": game_state}
@@ -724,12 +718,13 @@ def process_subtract_point(team):
         game_state["score2"] = game_state["point2"]
 
     add_to_history("point_subtract", team,
-                   score_before, (game_state["score1"], game_state["score2"]),
-                   game_before, (game_state["game1"], game_state["game2"]),
-                   set_before, (game_state["set1"], game_state["set2"]))
+                  score_before, (game_state["score1"], game_state["score2"]),
+                  game_before, (game_state["game1"], game_state["game2"]),
+                  set_before, (game_state["set1"], game_state["set2"]))
 
     game_state["lastupdated"] = datetime.now().isoformat()
     broadcast_gamestate()
+
     return {"success": True, "message": f"Point subtracted from team {team}", "gamestate": game_state}
 
 # ===== FLASK ROUTES =====
@@ -787,13 +782,16 @@ def markmatchdisplayed():
     global match_storage
     if not match_storage["matchcompleted"]:
         return jsonify({"success": False, "error": "No match data"}), 400
+
     match_storage["displayshown"] = True
     wipe_immediately = request.get_json().get("wipeimmediately", True) if request.get_json() else True
+
     if wipe_immediately:
         wipe_match_storage()
         message = "Match data wiped"
     else:
         message = "Match data marked as displayed"
+
     return jsonify({"success": True, "message": message})
 
 @app.route("/setgamemode", methods=["POST"])
@@ -803,7 +801,7 @@ def setgamemode():
     try:
         data = request.get_json() or {}
         mode = data.get("mode", None)
-        # allow clearing mode with null/None
+
         if mode is None:
             game_state["gamemode"] = None
             game_state["initial_switch_done"] = False
@@ -846,7 +844,6 @@ def resetmatch():
         "totalgamesinset": 0,
         "mode": "normal",
         "initial_switch_done": False
-        # Note: gamemode persists unless client explicitly clears it via /setgamemode with null
     })
     broadcast_gamestate()
     return jsonify({"success": True, "message": "Match reset successfully", "gamestate": game_state})
@@ -856,17 +853,13 @@ def swap_sensors():
     """Swap sensor assignments: BLACK ↔ YELLOW"""
     global sensor_mapping
 
-    # Swap the team assignments
     old_local = sensor_mapping["sensor_local_0x29"]
     old_pico = sensor_mapping["sensor_pico_uart"]
-
     sensor_mapping["sensor_local_0x29"] = old_pico
     sensor_mapping["sensor_pico_uart"] = old_local
     sensor_mapping["last_swap"] = datetime.now().isoformat()
 
     print(f"🔄 Sensors swapped: Local(0x29)={sensor_mapping['sensor_local_0x29']}, Pico(UART)={sensor_mapping['sensor_pico_uart']}")
-
-    # Broadcast the new mapping to all connected clients
     socketio.emit('sensor_mapping_updated', sensor_mapping, namespace='/')
 
     return jsonify({
@@ -882,10 +875,7 @@ def swap_sensors():
 @app.route("/getsensormapping", methods=["GET"])
 def get_sensor_mapping():
     """Get current sensor to team mapping"""
-    return jsonify({
-        "success": True,
-        "mapping": sensor_mapping
-    })
+    return jsonify({"success": True, "mapping": sensor_mapping})
 
 @app.route("/health", methods=["GET"])
 def healthcheck():
@@ -905,7 +895,7 @@ def healthcheck():
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("Padel Scoreboard Backend - OPTIMIZED with pre-mode gating")
+    print("Padel Scoreboard Backend - FIXED sensor swap for all modes")
     print("=" * 70)
     print("GAME MODES")
     print("  BASIC: Side switch at start of each set (0-0 states).")
@@ -914,6 +904,8 @@ if __name__ == "__main__":
     print("Socket.IO enabled for real-time updates")
     print("Access at http://127.0.0.1:5000")
     print("=" * 70)
+
     validation_thread = threading.Thread(target=run_initial_sensor_validation, daemon=True)
     validation_thread.start()
+
     socketio.run(app, debug=False, host="127.0.0.1", port=5000, allow_unsafe_werkzeug=True)
