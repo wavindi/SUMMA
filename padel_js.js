@@ -109,21 +109,18 @@ function handleSensorInput(data) {
 // =================================================================================================
 // SIDE SWITCH HANDLER
 // =================================================================================================
+
 function handleSideSwitch(data) {
-  console.log(`🔄 CHANGE SIDES - Total games: ${data.totalgames}, Score: ${data.gamescore} (Sets: ${data.setscore})`);
+    console.log("CHANGE SIDES - Total games", data.totalgames, "Score", data.gamescore, "Sets", data.setscore);
 
-  // Display visual notification to change sides
-  showSideSwitchNotification(data);
+    // Visual notification only
+    showSideSwitchNotification(data);
 
-  // Send signal to backend to swap sensors (BLACK ↔ YELLOW)
-  // The sensor swap happens in your SUMMA system
-  sendSensorSwapCommand();
-
-  // Acknowledge the side switch to backend after 5 seconds
-  setTimeout(() => {
-    socket.emit('acknowledge_side_switch');
-    console.log('✅ Side switch acknowledged to backend');
-  }, 5000);
+    // Only acknowledge to backend (do NOT call /swapsensors from UI)
+    setTimeout(() => {
+        socket.emit("acknowledgesideswitch");
+        console.log("Side switch acknowledged to backend");
+    }, 5000);
 }
 
 function showSideSwitchNotification(data) {
