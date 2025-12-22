@@ -156,11 +156,24 @@ match_storage = {
 }
 
 # ===== SENSOR MAPPING (for side switching) =====
+# CORRECTED: Using actual sensor setup - 0x29 (local) + Pico UART (remote 40m)
 sensor_mapping = {
-    "sensor1_team": "black",  # Sensor at 0x39 initially assigned to BLACK team
-    "sensor2_team": "yellow",  # Sensor at 0x29 initially assigned to YELLOW team
+    "sensor_local_0x29": "black",   # Local I2C sensor at 0x29 directly on Pi
+    "sensor_pico_uart": "yellow",   # Remote sensor via Pico through UART/RJ45
     "last_swap": None
 }
+
+def get_team_from_sensor(sensor_id):
+    """
+    Returns the current team assignment for a given sensor.
+    sensor_id: "local" (for 0x29) or "pico" (for UART sensor)
+    """
+    if sensor_id == "local":
+        return sensor_mapping["sensor_local_0x29"]
+    elif sensor_id == "pico":
+        return sensor_mapping["sensor_pico_uart"]
+    else:
+        return None
 
 # ===== SIDE SWITCHING =====
 def trigger_basic_mode_side_switch_if_needed():
@@ -837,14 +850,14 @@ def swap_sensors():
     global sensor_mapping
 
     # Swap the team assignments
-    old_sensor1 = sensor_mapping["sensor1_team"]
-    old_sensor2 = sensor_mapping["sensor2_team"]
+    old_local = sensor_mapping["sensor_local_0x29"]
+    old_pico = sensor_mapping["sensor_pico_uart"]
 
-    sensor_mapping["sensor1_team"] = old_sensor2
-    sensor_mapping["sensor2_team"] = old_sensor1
+    sensor_mapping["sensor_local_0x29"] = old_pico
+    sensor_mapping["sensor_pico_uart"] = old_local
     sensor_mapping["last_swap"] = datetime.now().isoformat()
 
-    print(f"🔄 Sensors swapped: Sensor1(0x39)={sensor_mapping['sensor1_team']}, Sensor2(0x29)={sensor_mapping['sensor2_team']}")
+    print(f"🔄 Sensors swapped: Local(0x29)={sensor_mapping['sensor_local_0x29']}, Pico(UART)={sensor_mapping['sensor_pico_uart']}")
 
     # Broadcast the new mapping to all connected clients
     socketio.emit('sensor_mapping_updated', sensor_mapping, namespace='/')
@@ -853,8 +866,8 @@ def swap_sensors():
         "success": True,
         "message": "Sensors swapped successfully",
         "mapping": {
-            "sensor1_0x39": sensor_mapping["sensor1_team"],
-            "sensor2_0x29": sensor_mapping["sensor2_team"]
+            "sensor_local_0x29": sensor_mapping["sensor_local_0x29"],
+            "sensor_pico_uart": sensor_mapping["sensor_pico_uart"]
         },
         "timestamp": sensor_mapping["last_swap"]
     })
