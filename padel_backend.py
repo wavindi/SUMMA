@@ -155,6 +155,13 @@ match_storage = {
     "displayshown": False
 }
 
+# ===== SENSOR MAPPING (for side switching) =====
+sensor_mapping = {
+    "sensor1_team": "black",  # Sensor at 0x39 initially assigned to BLACK team
+    "sensor2_team": "yellow",  # Sensor at 0x29 initially assigned to YELLOW team
+    "last_swap": None
+}
+
 # ===== SIDE SWITCHING =====
 def trigger_basic_mode_side_switch_if_needed():
     """BASIC MODE: Trigger side switch immediately when a new set starts (0-0 at sets 0-0, 1-0, 0-1, 1-1)."""
@@ -576,11 +583,9 @@ def process_add_point(team):
         broadcast_pointscored(team, "addpoint")
         return {"success": True, "ignored": True, "message": "Point ignored until mode is selected", "gamestate": game_state}
 
-    # MODIFIED: Emit event instead of HTTP 400 to trigger frontend reset
     if game_state["matchwon"]:
-        print("⚠️  Match won - emitting pointscored event to trigger reset")
-        broadcast_pointscored(team, "addpoint")
-        return {"success": True, "message": "Match won - reset signal sent", "matchwon": True, "winner": game_state["winner"]}
+        return {"success": False, "error": "Match is already completed",
+                "winner": game_state["winner"], "matchwon": True}
 
     score_before = (game_state["score1"], game_state["score2"])
     game_before = (game_state["game1"], game_state["game2"])
@@ -825,6 +830,42 @@ def resetmatch():
     })
     broadcast_gamestate()
     return jsonify({"success": True, "message": "Match reset successfully", "gamestate": game_state})
+
+@app.route("/swapsensors", methods=["POST"])
+def swap_sensors():
+    """Swap sensor assignments: BLACK ↔ YELLOW"""
+    global sensor_mapping
+
+    # Swap the team assignments
+    old_sensor1 = sensor_mapping["sensor1_team"]
+    old_sensor2 = sensor_mapping["sensor2_team"]
+
+    sensor_mapping["sensor1_team"] = old_sensor2
+    sensor_mapping["sensor2_team"] = old_sensor1
+    sensor_mapping["last_swap"] = datetime.now().isoformat()
+
+    print(f"🔄 Sensors swapped: Sensor1(0x39)={sensor_mapping['sensor1_team']}, Sensor2(0x29)={sensor_mapping['sensor2_team']}")
+
+    # Broadcast the new mapping to all connected clients
+    socketio.emit('sensor_mapping_updated', sensor_mapping, namespace='/')
+
+    return jsonify({
+        "success": True,
+        "message": "Sensors swapped successfully",
+        "mapping": {
+            "sensor1_0x39": sensor_mapping["sensor1_team"],
+            "sensor2_0x29": sensor_mapping["sensor2_team"]
+        },
+        "timestamp": sensor_mapping["last_swap"]
+    })
+
+@app.route("/getsensormapping", methods=["GET"])
+def get_sensor_mapping():
+    """Get current sensor to team mapping"""
+    return jsonify({
+        "success": True,
+        "mapping": sensor_mapping
+    })
 
 @app.route("/health", methods=["GET"])
 def healthcheck():
