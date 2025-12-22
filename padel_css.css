@@ -42,6 +42,13 @@ body {
     position: relative;
 }
 
+/* Add this at the end of your CSS file */
+.scoreboard.hidden {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+
 /* Header */
 .header {
     background: linear-gradient(90deg, var(--gold) 0%, var(--gold-dark) 100%);
