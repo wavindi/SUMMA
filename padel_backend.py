@@ -662,38 +662,38 @@ def process_add_point(team):
     game_state["lastupdated"] = datetime.now().isoformat()
 
     sideswitchneeded = False
-if game_just_won and not game_state["matchwon"] and game_state["mode"] == "normal":
-    sideswitchneeded = check_side_switch()
-
-if sideswitchneeded:
-    broadcast_sideswitch()
-
-broadcast_gamestate()
-
-if game_state["matchwon"]:
-    broadcast_matchwon()
-else:
-    broadcast_pointscored(team, action_type)
-
-response = {
-    "success": True,
-    "message": f"Point added to team {team}",
-    "gamestate": game_state,
-    "matchwon": game_state["matchwon"],
-    "winner": game_state["winner"] if game_state["matchwon"] else None
-}
-
-# ✅ FIX: Include side_switch in response whenever shouldswitchsides is True
-# This ensures Basic mode (start-of-set) swaps reach the Python sensor process
-if game_state["shouldswitchsides"]:
-    response["sideswitch"] = {
-        "required": True,
-        "totalgames": game_state["totalgamesinset"],
-        "gamescore": f"{game_state['game1']}-{game_state['game2']}",
-        "setscore": f"{game_state['set1']}-{game_state['set2']}",
+    if game_just_won and not game_state["matchwon"] and game_state["mode"] == "normal":
+        sideswitchneeded = check_side_switch()
+    
+    if sideswitchneeded:
+        broadcast_sideswitch()
+    
+    broadcast_gamestate()
+    
+    if game_state["matchwon"]:
+        broadcast_matchwon()
+    else:
+        broadcast_pointscored(team, action_type)
+    
+    response = {
+        "success": True,
+        "message": f"Point added to team {team}",
+        "gamestate": game_state,
+        "matchwon": game_state["matchwon"],
+        "winner": game_state["winner"] if game_state["matchwon"] else None
     }
-
-return response
+    
+    # ✅ FIX: Include side_switch in response whenever shouldswitchsides is True
+    # This ensures Basic mode (start-of-set) swaps reach the Python sensor process
+    if game_state["shouldswitchsides"]:
+        response["sideswitch"] = {
+            "required": True,
+            "totalgames": game_state["totalgamesinset"],
+            "gamescore": f"{game_state['game1']}-{game_state['game2']}",
+            "setscore": f"{game_state['set1']}-{game_state['set2']}",
+        }
+    
+    return response
 
 
 def process_subtract_point(team):
