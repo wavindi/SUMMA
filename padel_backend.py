@@ -197,7 +197,12 @@ def trigger_basic_mode_side_switch_if_needed():
     set2 = game_state["set2"]
     total_sets = set1 + set2
     
-    if (total_games == 0 and total_sets in [0, 1, 2] and not game_state.get("initial_switch_done", False)):
+    # ✅ SKIP side switch at the very beginning (0-0 sets, 0-0 games)
+    if total_sets == 0 and total_games == 0:
+        print(f"→ BASIC MODE: Skipping side switch at match start (0-0, 0-0)")
+        return
+    
+    if (total_games == 0 and total_sets in [1, 2] and not game_state.get("initial_switch_done", False)):
         game_state["initial_switch_done"] = True
         game_state["shouldswitchsides"] = True
         game_state["totalgamesinset"] = 0
@@ -905,7 +910,7 @@ def get_sensor_mapping():
 def healthcheck():
     logoexists = os.path.exists("logo.png")
     backexists = os.path.exists("back.png")
-    changeaudioexists = os.path.exists("change.mp3")  # ✅ ADDED CHECK
+    changeaudioexists = os.path.exists("change.mp3")
     
     return jsonify({
         "status": "healthy",
@@ -919,7 +924,7 @@ def healthcheck():
         "files": {
             "logo.png": "found" if logoexists else "missing",
             "back.png": "found" if backexists else "missing",
-            "change.mp3": "found" if changeaudioexists else "missing"  # ✅ ADDED
+            "change.mp3": "found" if changeaudioexists else "missing"
         }
     })
 
@@ -929,6 +934,7 @@ if __name__ == "__main__":
     print("=" * 70)
     print("GAME MODES")
     print("  BASIC: Side switch at start of each set (0-0 states).")
+    print("           ❌ NO switch at match start (0-0, 0-0)")
     print("  COMPETITION/LOCK: Switch after odd games (1,3,5,7...).")
     print("=" * 70)
     print("Socket.IO enabled for real-time updates")
