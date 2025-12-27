@@ -1,0 +1,601 @@
+#!/usr/bin/env python3
+
+"""
+VL53L5CX Dual Sensors - DUAL STM32 UART MODE (Raspberry Pi 3B)
+Both sensors connected via STM32 bridges over dual hardware UART
+UART0 (/dev/ttyAMA0) and UART5 (/dev/ttyAMA1)
+Ultra-low latency throughout entire pipeline
+With side switching after odd-numbered games
++ Automatic sensor-to-team swap when backend requests side switch
+"""
+
+import time
+import collections
+import statistics
+import requests
+import RPi.GPIO as GPIO
+import sys
+import atexit
+import serial
+import threading
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+SERVER_URL = 'http://localhost:5000'
+ADD_POINT_URL = f'{SERVER_URL}/addpoint'
+SUBTRACT_POINT_URL = f'{SERVER_URL}/subtractpoint'
+RESET_MATCH_URL = f'{SERVER_URL}/resetmatch'
+
+# UART Configuration - DUAL HARDWARE UART (Pi 3B)
+UART_PORT_SENSOR1 = '/dev/ttyAMA0'      # Black team (GPIO 14/15 - UART0)
+UART_PORT_SENSOR2 = '/dev/ttyAMA1'      # Yellow team (GPIO 12/13 - UART5)
+UART_BAUD = 57600
+
+CALIBRATION_SAMPLES = 60
+MEDIAN_WINDOW = 3
+MOVING_AVG_WINDOW = 1
+OUTLIER_THRESHOLD = 100
+MAX_VALID_CALIBRATION = 150
+MIN_VALID_CALIBRATION = 0
+
+DETECTION_THRESHOLD = 8
+MIN_ZONES_FOR_DETECTION = 3
+GOOD_ZONES = [0, 5, 6, 9, 10, 11, 12, 13]
+
+AUTO_RESET_THRESHOLD = 80
+AUTO_RESET_RAW_LIMIT = 20
+
+# Timing windows for actions
+ADD_POINT_WINDOW = (0.15, 3.0)
+SUBTRACT_POINT_WINDOW = (3.0, 7.0)
+RESET_MATCH_WINDOW = (7.5, 15.0)
+MAX_DETECTION_TIMEOUT = 15.5
+
+BLACK_TEAM = 'black'
+YELLOW_TEAM = 'yellow'
+
+# GPIO Pins - BOTH ARE RELAYS NOW
+BLACK_RELAY_PIN = 23
+YELLOW_RELAY_PIN = 24
+
+# ============================================================================
+# OPTIMIZATION SETTINGS
+# ============================================================================
+LOOP_SLEEP_TIME = 0.005
+HTTP_TIMEOUT = 0.8
+HTTP_CONNECTION_TIMEOUT = 0.3
+USE_SESSION = True
+
+# ============================================================================
+# RELAY CONFIGURATION
+# ============================================================================
+RELAY_ACTIVE_LOW = True
+
+RELAY_OFF_STATE = GPIO.HIGH if RELAY_ACTIVE_LOW else GPIO.LOW
+RELAY_ON_STATE = GPIO.LOW if RELAY_ACTIVE_LOW else GPIO.HIGH
+
+# ============================================================================
+# GPIO SETUP
+# ============================================================================
+GPIO.setwarnings(False)
+try:
+    GPIO.setmode(GPIO.BCM)
+    
+    GPIO.setup(BLACK_RELAY_PIN, GPIO.OUT, initial=RELAY_OFF_STATE)
+    print(f"✅ GPIO {BLACK_RELAY_PIN} initialized: {RELAY_OFF_STATE} "
+          f"({'HIGH' if RELAY_OFF_STATE else 'LOW'}) = BLACK RELAY OFF")
+    
+    GPIO.setup(YELLOW_RELAY_PIN, GPIO.OUT, initial=RELAY_OFF_STATE)
+    print(f"✅ GPIO {YELLOW_RELAY_PIN} initialized: {RELAY_OFF_STATE} "
+          f"({'HIGH' if RELAY_OFF_STATE else 'LOW'}) = YELLOW RELAY OFF")
+    
+    print(f"   Relay type: {'ACTIVE-LOW' if RELAY_ACTIVE_LOW else 'ACTIVE-HIGH'}")
+    
+    time.sleep(0.5)
+    black_state = GPIO.input(BLACK_RELAY_PIN)
+    yellow_state = GPIO.input(YELLOW_RELAY_PIN)
+    
+    if black_state == RELAY_OFF_STATE and yellow_state == RELAY_OFF_STATE:
+        print(f"✅ Both relays confirmed OFF")
+    else:
+        print(f"⚠️  Warning: Black={black_state}, Yellow={yellow_state}")
+        GPIO.output(BLACK_RELAY_PIN, RELAY_OFF_STATE)
+        GPIO.output(YELLOW_RELAY_PIN, RELAY_OFF_STATE)
+        print(f"   Forced both to OFF state")
+    
+    GPIO_AVAILABLE = True
+except Exception as e:
+    print(f"⚠️  GPIO setup failed: {e}")
+    GPIO_AVAILABLE = False
+
+# ============================================================================
+# HTTP SESSION
+# ============================================================================
+if USE_SESSION:
+    http_session = requests.Session()
+    http_session.headers.update({'Connection': 'keep-alive'})
+    print("✅ HTTP session created (keep-alive enabled)")
+else:
+    http_session = requests
+
+# ============================================================================
+# REMOTE SENSOR DATA - TWO SENSORS
+# ============================================================================
+remote_sensor_lock_1 = threading.Lock()
+remote_sensor_data_1 = {
+    'distances': [0] * 16,
+    'last_update': 0,
+    'frame_count': 0,
+    'data_ready': False
+}
+
+remote_sensor_lock_2 = threading.Lock()
+remote_sensor_data_2 = {
+    'distances': [0] * 16,
+    'last_update': 0,
+    'frame_count': 0,
+    'data_ready': False
+}
+
+# ============================================================================
+# GLOBAL TEAM MAPPING / SIDE SWITCH STATE
+# ============================================================================
+team_info = None
+teams_swapped = False
+
+# ============================================================================
+# RELAY CONTROL FUNCTIONS
+# ============================================================================
+def relay_pulse(pin, team_name, duration=1.0):
+    """Pulse relay for specified duration."""
+    if GPIO_AVAILABLE:
+        try:
+            timestamp = time.strftime('%H:%M:%S.%f')[:-3]
+            GPIO.output(pin, RELAY_ON_STATE)
+            print(f"🔔 [{timestamp}] {team_name.upper()} relay ON ({duration}s)")
+            time.sleep(duration)
+            GPIO.output(pin, RELAY_OFF_STATE)
+            print(f"🔕 [{timestamp}] {team_name.upper()} relay OFF")
+        except Exception as e:
+            print(f"⚠️  {team_name} relay pulse failed: {e}")
+
+def cleanup_gpio():
+    """Clean up GPIO on exit - ensure both relays are OFF."""
+    if GPIO_AVAILABLE:
+        try:
+            print("\n🧹 Cleaning up GPIO...")
+            GPIO.output(BLACK_RELAY_PIN, RELAY_OFF_STATE)
+            GPIO.output(YELLOW_RELAY_PIN, RELAY_OFF_STATE)
+            print(f"   GPIO {BLACK_RELAY_PIN} set to {RELAY_OFF_STATE} (BLACK relay OFF)")
+            print(f"   GPIO {YELLOW_RELAY_PIN} set to {RELAY_OFF_STATE} (YELLOW relay OFF)")
+            GPIO.cleanup()
+            print("✅ GPIO cleaned up")
+        except Exception as e:
+            print(f"⚠️  Cleanup error: {e}")
+
+atexit.register(cleanup_gpio)
+
+# ============================================================================
+# TEAM ASSIGNMENT SWAP
+# ============================================================================
+def swap_team_assignments():
+    """Swap which sensor controls which team."""
+    global teams_swapped, team_info
+    
+    if team_info is None:
+        print("⚠️  team_info not initialized, cannot swap assignments")
+        return
+    
+    teams_swapped = not teams_swapped
+    
+    if teams_swapped:
+        team_info['sensor1']['team'] = YELLOW_TEAM
+        team_info['sensor2']['team'] = BLACK_TEAM
+        print("🔄 Teams swapped: Sensor1→YELLOW, Sensor2→BLACK")
+    else:
+        team_info['sensor1']['team'] = BLACK_TEAM
+        team_info['sensor2']['team'] = YELLOW_TEAM
+        print("🔄 Teams restored: Sensor1→BLACK, Sensor2→YELLOW")
+
+# ============================================================================
+# HTTP COMMUNICATION
+# ============================================================================
+def send_action_http(team, action, detection_time):
+    """Ultra-fast HTTP with backend confirmation."""
+    if action == 'add':
+        url = ADD_POINT_URL
+        payload = {'team': team, 'action_type': 'add_point', 'detection_time': detection_time}
+        action_text = "Add point"
+    elif action == 'subtract':
+        url = SUBTRACT_POINT_URL
+        payload = {'team': team, 'action_type': 'subtract_point', 'detection_time': detection_time}
+        action_text = "Subtract point"
+    elif action == 'reset':
+        url = RESET_MATCH_URL
+        payload = {'action': 'reset_match', 'triggered_by': team, 'detection_time': detection_time}
+        action_text = "Reset match"
+    else:
+        return False
+    
+    def _send_and_trigger():
+        try:
+            start_time = time.time()
+            timestamp = time.strftime('%H:%M:%S.%f')[:-3]
+            print(f"📤 [{timestamp}] Sending: {action_text} for {team.upper()} ({detection_time:.2f}s)")
+            
+            response = http_session.post(
+                url,
+                json=payload,
+                timeout=(HTTP_CONNECTION_TIMEOUT, HTTP_TIMEOUT)
+            )
+            
+            response_time = (time.time() - start_time) * 1000
+            
+            if response.status_code == 200 and response.json().get('success'):
+                timestamp_confirm = time.strftime('%H:%M:%S.%f')[:-3]
+                print(f"✅ [{timestamp_confirm}] Backend confirmed in {response_time:.1f}ms!")
+                
+                response_data = response.json()
+                
+                side_switch = response_data.get('side_switch')
+                if side_switch:
+                    print(f"🔄 [{timestamp_confirm}] SIDE SWITCH REQUIRED!")
+                    print(f"   Total games played: {side_switch.get('total_games')}")
+                    print(f"   Current score: {side_switch.get('game_score')}")
+                    print(f"   Set score: {side_switch.get('set_score')}")
+                    print("   🏃 Players should change court sides now!")
+                    swap_team_assignments()
+                
+                if action == 'add':
+                    if team == BLACK_TEAM:
+                        relay_thread = threading.Thread(
+                            target=relay_pulse,
+                            args=(BLACK_RELAY_PIN, BLACK_TEAM, 1.0),
+                            daemon=True
+                        )
+                        relay_thread.start()
+                    elif team == YELLOW_TEAM:
+                        relay_thread = threading.Thread(
+                            target=relay_pulse,
+                            args=(YELLOW_RELAY_PIN, YELLOW_TEAM, 1.0),
+                            daemon=True
+                        )
+                        relay_thread.start()
+                
+                return True
+            else:
+                error_msg = (response.json().get('error', 'Unknown')
+                           if response.status_code == 200
+                           else f"HTTP {response.status_code}")
+                print(f"❌ [{timestamp}] Backend error ({response_time:.1f}ms): {error_msg}")
+                return False
+        
+        except requests.exceptions.Timeout:
+            print(f"⚠️  Backend timeout (>{HTTP_TIMEOUT*1000:.0f}ms)")
+            return False
+        except Exception as e:
+            print(f"❌ HTTP Error: {e}")
+            return False
+    
+    http_thread = threading.Thread(target=_send_and_trigger, daemon=True)
+    http_thread.start()
+    return True
+
+def determine_action(detection_duration):
+    """Determine action based on detection duration."""
+    if ADD_POINT_WINDOW[0] <= detection_duration <= ADD_POINT_WINDOW[1]:
+        return 'add'
+    elif SUBTRACT_POINT_WINDOW[0] <= detection_duration <= SUBTRACT_POINT_WINDOW[1]:
+        return 'subtract'
+    elif RESET_MATCH_WINDOW[0] <= detection_duration <= RESET_MATCH_WINDOW[1]:
+        return 'reset'
+    return None
+
+# ============================================================================
+# FILTERING
+# ============================================================================
+def median_filter(window, value):
+    window.append(value)
+    return statistics.median(window) if len(window) >= 2 else value
+
+def moving_average(window, value):
+    window.append(value)
+    return sum(window) / len(window)
+
+# ============================================================================
+# CALIBRATION
+# ============================================================================
+def calibrate_remote_baseline_specific(name, sensor_data, sensor_lock):
+    """Calibrate remote sensor baseline via UART."""
+    print(f"📊 Calibrating {name}...")
+    samples = {i: [] for i in range(16)}
+    collected = 0
+    timeout = time.time() + 10
+    
+    while collected < CALIBRATION_SAMPLES and time.time() < timeout:
+        with sensor_lock:
+            if sensor_data['data_ready']:
+                distances = sensor_data['distances'].copy()
+            else:
+                time.sleep(0.05)
+                continue
+        
+        zone_readings = []
+        for i in range(16):
+            val = distances[i]
+            if MIN_VALID_CALIBRATION < val < MAX_VALID_CALIBRATION:
+                zone_readings.append((i, val))
+        
+        if len(zone_readings) > 12:
+            for zone_idx, val in zone_readings:
+                samples[zone_idx].append(val)
+            collected += 1
+            if collected % 10 == 0:
+                print(f"   Progress: {collected}/{CALIBRATION_SAMPLES}")
+        
+        time.sleep(0.05)
+    
+    baseline = {i: (statistics.median(samples[i]) if samples[i] else 20) for i in range(16)}
+    print(f"✅ {name} calibrated ({collected} samples)")
+    return baseline
+
+# ============================================================================
+# SENSOR PROCESSING
+# ============================================================================
+def process_remote_sensor_specific(baseline, median_windows, movavg_windows, last_valid,
+                                   sensor_data, sensor_lock):
+    """Process remote sensor data from UART."""
+    with sensor_lock:
+        if not sensor_data['data_ready']:
+            return None, None
+        distances = sensor_data['distances'].copy()
+    
+    try:
+        results = []
+        zones_above_thresh = 0
+        
+        for i in range(16):
+            raw_dist = distances[i]
+            corrected = raw_dist - baseline.get(i, 0)
+            
+            if last_valid[i] is not None:
+                if last_valid[i] > AUTO_RESET_THRESHOLD and corrected < AUTO_RESET_RAW_LIMIT:
+                    median_windows[i].clear()
+                    movavg_windows[i].clear()
+                    last_valid[i] = corrected
+                elif abs(corrected - last_valid[i]) > OUTLIER_THRESHOLD:
+                    corrected = last_valid[i]
+            
+            med_val = median_filter(median_windows[i], corrected)
+            smooth_val = moving_average(movavg_windows[i], med_val)
+            smooth_val = max(smooth_val, 0)
+            last_valid[i] = smooth_val
+            
+            results.append(int(round(smooth_val)))
+            
+            if i in GOOD_ZONES and smooth_val > DETECTION_THRESHOLD:
+                zones_above_thresh += 1
+        
+        detected = zones_above_thresh >= MIN_ZONES_FOR_DETECTION
+        return results, detected
+    
+    except:
+        return None, None
+
+# ============================================================================
+# UART READER THREAD
+# ============================================================================
+def uart_reader_thread(serial_port, sensor_data, sensor_lock, sensor_name):
+    """Background thread to read UART data from STM32."""
+    reading_data = False
+    data_buffer = []
+    
+    while True:
+        try:
+            if serial_port.in_waiting > 0:
+                line = serial_port.readline().decode('utf-8', errors='ignore').strip()
+                
+                if line == "DATA_START":
+                    reading_data = True
+                    data_buffer = []
+                elif line == "DATA_END":
+                    reading_data = False
+                    distances = []
+                    for data_line in data_buffer:
+                        if ',' in data_line:
+                            try:
+                                dist = int(data_line.split(',')[0])
+                                distances.append(dist)
+                            except:
+                                pass
+                    
+                    if len(distances) == 16:
+                        with sensor_lock:
+                            sensor_data['distances'] = distances
+                            sensor_data['last_update'] = time.time()
+                            sensor_data['frame_count'] += 1
+                            sensor_data['data_ready'] = True
+                elif reading_data:
+                    data_buffer.append(line)
+                elif line and (line.startswith("STM32") or line.startswith("CONFIG") or line.startswith("READY")):
+                    print(f"  [{sensor_name}] {line}")
+            else:
+                time.sleep(0.001)
+        except Exception as e:
+            print(f"⚠️  [{sensor_name}] UART error: {e}")
+            time.sleep(0.1)
+
+# ============================================================================
+# DETECTION STATE MACHINE
+# ============================================================================
+def process_single_sensor(state, detected, current_time, timestamp, team_info_local):
+    """Instant detection of hand removal."""
+    team = team_info_local['team']
+    sensor_num = team_info_local['num']
+    
+    if detected:
+        if not state['active']:
+            state['active'] = True
+            state['start_time'] = current_time
+            print(f'👋 [{timestamp}] [S{sensor_num}-{team.upper()}] Detection started')
+        
+        duration = current_time - state['start_time']
+        if duration > MAX_DETECTION_TIMEOUT:
+            print(f'⏱️  [{timestamp}] [{team.upper()}] Timeout ({duration:.2f}s) - resetting')
+            state['active'] = False
+            state['start_time'] = None
+    else:
+        if state['active']:
+            total_duration = current_time - state['start_time']
+            timestamp_ms = time.strftime('%H:%M:%S.%f')[:-3]
+            print(f'✋ [{timestamp_ms}] [{team.upper()}] Hand removed after {total_duration:.2f}s')
+            
+            action = determine_action(total_duration)
+            if action:
+                send_action_http(team, action, total_duration)
+                print(f'⚡ [{timestamp_ms}] Action "{action}" sent to backend')
+            
+            state['active'] = False
+            state['start_time'] = None
+
+# ============================================================================
+# MAIN
+# ============================================================================
+def main():
+    global team_info
+    
+    print("="*70)
+    print("🏓 Padel Scoreboard - DUAL STM32 UART MODE (Pi 3B)")
+    print("="*70)
+    print("⚡ CONFIGURATION:")
+    print(f"   • Platform: Raspberry Pi 3B")
+    print(f"   • UART1 (Black): {UART_PORT_SENSOR1} (GPIO 14/15)")
+    print(f"   • UART2 (Yellow): {UART_PORT_SENSOR2} (GPIO 12/13)")
+    print(f"   • Sensor polling: {LOOP_SLEEP_TIME*1000:.1f}ms (200 Hz)")
+    print(f"   • HTTP timeout: {HTTP_TIMEOUT*1000:.0f}ms")
+    print(f"   • Expected latency: 50-150ms (hand removal → screen update)")
+    print("="*70)
+    
+    # Connect to UART (STM32 #1 - Black Team)
+    try:
+        uart_serial1 = serial.Serial(UART_PORT_SENSOR1, UART_BAUD, timeout=1)
+        print(f"✅ UART Sensor 1 (Black) connected on {UART_PORT_SENSOR1}")
+    except Exception as e:
+        print(f"❌ UART Sensor 1 failed: {e}")
+        print(f"   Make sure Bluetooth is disabled and UART0 is enabled!")
+        sys.exit(1)
+    
+    # Connect to UART (STM32 #2 - Yellow Team)
+    try:
+        uart_serial2 = serial.Serial(UART_PORT_SENSOR2, UART_BAUD, timeout=1)
+        print(f"✅ UART Sensor 2 (Yellow) connected on {UART_PORT_SENSOR2}")
+    except Exception as e:
+        print(f"❌ UART Sensor 2 failed: {e}")
+        print(f"   Make sure UART5 overlay is enabled in /boot/config.txt!")
+        sys.exit(1)
+    
+    # Start UART reader threads
+    uart_thread1 = threading.Thread(
+        target=uart_reader_thread,
+        args=(uart_serial1, remote_sensor_data_1, remote_sensor_lock_1, "STM32-1"),
+        daemon=True
+    )
+    uart_thread1.start()
+    
+    uart_thread2 = threading.Thread(
+        target=uart_reader_thread,
+        args=(uart_serial2, remote_sensor_data_2, remote_sensor_lock_2, "STM32-2"),
+        daemon=True
+    )
+    uart_thread2.start()
+    
+    time.sleep(3)
+    
+    # Calibration
+    print("\n" + "="*70)
+    print("🎯 Calibrating sensors...")
+    print("="*70)
+    
+    baseline1 = calibrate_remote_baseline_specific('STM32-1 (Black)',
+                                                    remote_sensor_data_1,
+                                                    remote_sensor_lock_1)
+    baseline2 = calibrate_remote_baseline_specific('STM32-2 (Yellow)',
+                                                    remote_sensor_data_2,
+                                                    remote_sensor_lock_2)
+    
+    # Initialize filtering windows
+    median_windows1 = {i: collections.deque(maxlen=MEDIAN_WINDOW) for i in range(16)}
+    movavg_windows1 = {i: collections.deque(maxlen=MOVING_AVG_WINDOW) for i in range(16)}
+    last_valid1 = {i: None for i in range(16)}
+    
+    median_windows2 = {i: collections.deque(maxlen=MEDIAN_WINDOW) for i in range(16)}
+    movavg_windows2 = {i: collections.deque(maxlen=MOVING_AVG_WINDOW) for i in range(16)}
+    last_valid2 = {i: None for i in range(16)}
+    
+    # Detection states
+    detection_states = {
+        'sensor1': {'active': False, 'start_time': None},
+        'sensor2': {'active': False, 'start_time': None}
+    }
+    
+    # Team mapping
+    team_info = {
+        'sensor1': {'team': BLACK_TEAM, 'num': 1},
+        'sensor2': {'team': YELLOW_TEAM, 'num': 2}
+    }
+    
+    print("\n🚀 System Ready - Dual STM32 UART Mode!")
+    print(f"   Black relay (GPIO {BLACK_RELAY_PIN}): {GPIO.input(BLACK_RELAY_PIN)} = OFF")
+    print(f"   Yellow relay (GPIO {YELLOW_RELAY_PIN}): {GPIO.input(YELLOW_RELAY_PIN)} = OFF")
+    print("   Wave hand at sensors to score!")
+    print("="*70)
+    
+    try:
+        while True:
+            current_time = time.time()
+            timestamp = time.strftime('%H:%M:%S')
+            
+            # Process STM32 #1
+            res1, det1 = process_remote_sensor_specific(
+                baseline1, median_windows1, movavg_windows1, last_valid1,
+                remote_sensor_data_1, remote_sensor_lock_1
+            )
+            if res1 is not None:
+                process_single_sensor(detection_states['sensor1'], det1,
+                                    current_time, timestamp, team_info['sensor1'])
+            
+            # Process STM32 #2
+            res2, det2 = process_remote_sensor_specific(
+                baseline2, median_windows2, movavg_windows2, last_valid2,
+                remote_sensor_data_2, remote_sensor_lock_2
+            )
+            if res2 is not None:
+                process_single_sensor(detection_states['sensor2'], det2,
+                                    current_time, timestamp, team_info['sensor2'])
+            
+            time.sleep(LOOP_SLEEP_TIME)
+    
+    except KeyboardInterrupt:
+        print('\n🛑 Stopping...')
+    finally:
+        if GPIO_AVAILABLE:
+            GPIO.output(BLACK_RELAY_PIN, RELAY_OFF_STATE)
+            GPIO.output(YELLOW_RELAY_PIN, RELAY_OFF_STATE)
+        
+        uart_serial1.close()
+        uart_serial2.close()
+        cleanup_gpio()
+        if USE_SESSION:
+            http_session.close()
+        print('✅ Stopped cleanly')
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        print(f"❌ Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
+        cleanup_gpio()
+        sys.exit(1)
