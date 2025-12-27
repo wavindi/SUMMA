@@ -1,45 +1,41 @@
-// =================================================================================================
-// SOCKET.IO REAL-TIME CONNECTION
-// =================================================================================================
-const socket = io('http://127.0.0.1:5000', {
-    transports: ['polling', 'websocket'],
+// ===== SOCKET.IO REAL-TIME CONNECTION =====
+const socket = io("http://127.0.0.1:5000", {
+    transports: ["polling", "websocket"],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: 10
 });
 
 socket.on('connect', () => {
-    console.log('✅ Connected to server via Socket.IO');
+    console.log('✓ Connected to server via Socket.IO');
     socket.emit('request_gamestate');
 });
 
 socket.on('disconnect', () => {
-    console.log('❌ Disconnected from server');
+    console.log('✗ Disconnected from server');
 });
 
 socket.on('gamestateupdate', (data) => {
-    console.log('📡 Game state update received:', data);
+    console.log('Game state update received:', data);
     updateFromGameState(data);
 });
 
 socket.on('pointscored', (data) => {
-    console.log('🎯 Point scored:', data);
+    console.log('Point scored:', data);
     handleSensorInput(data);
 });
 
 socket.on('matchwon', (data) => {
-    console.log('🏆 Match won:', data);
+    console.log('Match won:', data);
     displayWinner(data);
 });
 
 socket.on('sideswitchrequired', (data) => {
-    console.log('🔄 Side switch required:', data);
+    console.log('Side switch required:', data);
     handleSideSwitch(data);
 });
 
-// =================================================================================================
-// GAME VARIABLES
-// =================================================================================================
+// ===== GAME VARIABLES =====
 let score1 = 0;
 let score2 = 0;
 let games1 = 0;
@@ -57,69 +53,71 @@ let isScoreboardActive = false;
 
 const API_BASE = "http://127.0.0.1:5000";
 
-// =================================================================================================
-// SENSOR INPUT HANDLER
-// =================================================================================================
+// ===== SENSOR INPUT HANDLER =====
 function handleSensorInput(data) {
     const currentTime = Date.now();
-    
+
     // STATE 1: Winner screen is showing - reset match
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay && winnerDisplay.style.display === 'flex') {
-        console.log('🏆 Winner screen visible - sensor input detected, resetting match and going to splash');
+        console.log('Winner screen visible - sensor input detected, resetting match and going to splash');
         clearWinnerTimeout();
         resetMatchAndGoToSplash();
         return;
     }
-    
+
     // STATE 2: Splash screen is showing - go directly to GAME MODE screen (NO SCORING)
     const splashScreen = document.getElementById('splashScreen');
     if (splashScreen && splashScreen.classList.contains('active')) {
-        console.log('✨ Splash screen active - going to GAME MODE screen (NO SCORING)');
+        console.log('Splash screen active - going to GAME MODE screen (NO SCORING)');
         dismissSplash();
         return;
     }
-    
+
     // STATE 3: Mode selection screen - handle addpoint/subtractpoint
     const modeScreen = document.getElementById('modeSelectionScreen');
     if (modeScreen && modeScreen.style.display === 'flex') {
-        console.log('🎮 Game mode screen active - handling sensor input');
+        console.log('Game mode screen active - handling sensor input');
         if (data.action === 'addpoint') {
-            console.log('➕ addpoint detected on game mode screen - selecting BASIC mode (NO SCORING)');
+            console.log('addpoint detected on game mode screen - selecting BASIC mode (NO SCORING)');
             selectMode('basic');
         } else if (data.action === 'subtractpoint') {
-            console.log('➖ subtractpoint detected on game mode screen - selecting COMPETITION mode (NO SCORING)');
+            console.log('subtractpoint detected on game mode screen - selecting COMPETITION mode (NO SCORING)');
             selectMode('competition');
         }
         return;
     }
-    
+
     // STATE 4: Scoreboard is active - normal scoring
     if (isScoreboardActive && gameMode) {
-        console.log('📊 Scoreboard active - processing point');
+        console.log('Scoreboard active - processing point');
         showClickFeedback(data.team);
         showToast(data.action, data.team, data.gamestate);
     }
 }
 
-// =================================================================================================
-// SIDE SWITCH HANDLER
-// =================================================================================================
+// ===== SIDE SWITCH HANDLER (FULL-SCREEN RESPONSIVE) =====
 function handleSideSwitch(data) {
-    console.log(`🔄 CHANGE SIDES - Total games: ${data.totalgames}, Score: ${data.gamescore} (Sets: ${data.setscore})`);
+    console.log('🔄 CHANGE SIDES - Total games:', data.totalgames, 'Score:', data.gamescore, 'Sets:', data.setscore);
     showSideSwitchNotification(data);
 }
 
 function showSideSwitchNotification(data) {
+    // Remove existing notification if any
+    const existing = document.getElementById('sideSwitchNotification');
+    if (existing) {
+        existing.remove();
+    }
+    
     const notification = document.createElement('div');
     notification.id = 'sideSwitchNotification';
     notification.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.98);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -129,35 +127,36 @@ function showSideSwitchNotification(data) {
     `;
     
     notification.innerHTML = `
-        <div style="text-align: center; color: white;">
-            <div style="font-size: 80px; margin-bottom: 20px;">🔄</div>
-            <div style="font-size: 48px; font-weight: bold; margin-bottom: 10px;">CHANGE SIDES!</div>
-            <div style="font-size: 24px; opacity: 0.8;">Games: ${data.gamescore}</div>
-            <div style="font-size: 24px; opacity: 0.8;">Sets: ${data.setscore}</div>
-            <div style="font-size: 18px; margin-top: 30px; opacity: 0.6;">Score next point to continue...</div>
+        <div style="text-align: center; color: white; width: 100%; padding: 0 5vw;">
+            <div style="font-size: 25vh; margin-bottom: 4vh; line-height: 1;">🔄</div>
+            <div style="font-size: 12vh; font-weight: bold; margin-bottom: 6vh; text-transform: uppercase; letter-spacing: 0.5vw;">CHANGE SIDES!</div>
+            <div style="font-size: 8vh; opacity: 0.9; margin-top: 5vh; font-weight: 600;">Games: ${data.gamescore}</div>
+            <div style="font-size: 8vh; opacity: 0.9; margin-top: 3vh; font-weight: 600;">Sets: ${data.setscore}</div>
         </div>
     `;
     
     document.body.appendChild(notification);
     
+    console.log('🔄 Side switch notification displayed (FULLSCREEN):', data);
+    
+    // Auto-dismiss after 5 seconds
     setTimeout(() => {
         notification.style.animation = 'fadeOut 0.3s ease-out';
         setTimeout(() => {
             if (notification.parentElement) {
                 notification.parentElement.removeChild(notification);
+                console.log('✅ Side switch notification dismissed');
             }
         }, 300);
     }, 5000);
 }
 
-// =================================================================================================
-// INITIALIZATION
-// =================================================================================================
+// ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🏓 Padel Scoreboard Initialized - AUTO SKIPPING TO GAME MODE');
+    console.log('Padel Scoreboard Initialized - AUTO SKIPPING TO GAME MODE');
     
     setTimeout(() => {
-        console.log('⏩ Auto-skipping splash - going directly to game mode screen');
+        console.log('Auto-skipping splash - going directly to game mode screen');
         dismissSplash();
     }, 1000);
     
@@ -168,41 +167,34 @@ document.addEventListener('DOMContentLoaded', function() {
     setupWinnerScreenClickDismiss();
 });
 
-// =================================================================================================
-// SPLASH SCREEN
-// =================================================================================================
-
+// ===== SPLASH SCREEN =====
 function dismissSplash() {
     if (!splashDismissed) {
         splashDismissed = true;
         const splashScreen = document.getElementById('splashScreen');
         const scoreboard = document.querySelector('.scoreboard');
         
-        // ✅ FIXED: Hide scoreboard IMMEDIATELY before splash fades
+        // FIXED: Hide scoreboard IMMEDIATELY before splash fades
         if (scoreboard) {
             scoreboard.classList.add('hidden');
         }
         
         splashScreen.classList.remove('active');
-        
         setTimeout(() => {
             showModeSelection();
         }, 300);
         
-        console.log('✨ Splash dismissed - scoreboard hidden immediately');
+        console.log('Splash dismissed - scoreboard hidden immediately');
     }
 }
 
-
-// =================================================================================================
-// MODE SELECTION SCREEN
-// =================================================================================================
+// ===== MODE SELECTION SCREEN =====
 function showModeSelection() {
     const modeScreen = document.getElementById('modeSelectionScreen');
     const scoreboard = document.querySelector('.scoreboard');
     
     if (modeScreen) {
-        // ✅ FIXED: Hide scoreboard while mode selection is active
+        // FIXED: Hide scoreboard while mode selection is active
         if (scoreboard) {
             scoreboard.classList.add('hidden');
         }
@@ -210,30 +202,28 @@ function showModeSelection() {
         modeScreen.style.display = 'flex';
         modeScreen.offsetHeight;
         modeScreen.classList.add('active');
-        
-        console.log('🎮 GAME MODE screen shown - scoreboard hidden');
+        console.log('GAME MODE screen shown - scoreboard hidden');
     }
 }
 
 async function selectMode(mode) {
-    console.log(`✅ Mode selected: ${mode} - activating scoreboard`);
-    
+    console.log(`Mode selected: ${mode} - activating scoreboard`);
     gameMode = mode;
     
     try {
         const response = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({mode: mode})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: mode })
         });
         const data = await response.json();
         if (data.success) {
-            console.log(`✅ Game mode set to ${mode} on backend`);
+            console.log(`Game mode set to ${mode} on backend`);
         } else {
-            console.error('❌ Failed to set game mode:', data.error);
+            console.error('Failed to set game mode:', data.error);
         }
     } catch (error) {
-        console.error('❌ Error setting game mode:', error);
+        console.error('Error setting game mode:', error);
     }
     
     const modeScreen = document.getElementById('modeSelectionScreen');
@@ -244,23 +234,20 @@ async function selectMode(mode) {
         setTimeout(() => {
             modeScreen.style.display = 'none';
             
-            // ✅ FIXED: Show scoreboard when mode is selected
+            // FIXED: Show scoreboard when mode is selected
             if (scoreboard) {
                 scoreboard.classList.remove('hidden');
+                isScoreboardActive = true;
+                console.log('SCOREBOARD NOW ACTIVE and VISIBLE - points will count');
             }
-            
-            isScoreboardActive = true;
-            console.log('📊 SCOREBOARD NOW ACTIVE and VISIBLE - points will count');
         }, 500);
     }
     
     matchStartTime = Date.now();
-    console.log('⏱️ Scoreboard ready - match timer started');
+    console.log('Scoreboard ready - match timer started');
 }
 
-// =================================================================================================
-// MATCH DURATION TIMER
-// =================================================================================================
+// ===== MATCH DURATION TIMER =====
 function updateMatchDuration() {
     const now = Date.now();
     const elapsed = now - matchStartTime;
@@ -275,22 +262,19 @@ function updateMatchDuration() {
     }
 }
 
-// =================================================================================================
-// WINNER SCREEN MANAGEMENT
-// =================================================================================================
+// ===== WINNER SCREEN MANAGEMENT =====
 function setupWinnerScreenClickDismiss() {
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
         winnerDisplay.addEventListener('click', function(e) {
             if (e.target.closest('.action-button')) return;
-            
             if (winnerDisplay.style.display === 'flex') {
-                console.log('🏆 Winner screen clicked - resetting match and going to splash');
+                console.log('Winner screen clicked - resetting match and going to splash');
                 clearWinnerTimeout();
                 resetMatchAndGoToSplash();
             }
         });
-        console.log('👆 Winner screen click-to-dismiss enabled');
+        console.log('Winner screen click-to-dismiss enabled');
     }
 }
 
@@ -302,33 +286,33 @@ function clearWinnerTimeout() {
 }
 
 async function resetMatchAndGoToSplash() {
-    console.log('🔄 Resetting match, mode, and going to splash...');
+    console.log('Resetting match, mode, and going to splash...');
     
     try {
         const resetResponse = await fetch(`${API_BASE}/resetmatch`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'}
+            headers: { 'Content-Type': 'application/json' }
         });
         const resetData = await resetResponse.json();
         if (resetData.success) {
-            console.log('✅ Match reset successfully on backend');
+            console.log('Match reset successfully on backend');
         }
     } catch (error) {
-        console.error('❌ Error resetting match:', error);
+        console.error('Error resetting match:', error);
     }
     
     try {
         const modeResponse = await fetch(`${API_BASE}/setgamemode`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({mode: null})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: null })
         });
         const modeData = await modeResponse.json();
         if (modeData.success) {
-            console.log('✅ Game mode reset successfully on backend');
+            console.log('Game mode reset successfully on backend');
         }
     } catch (error) {
-        console.error('❌ Error resetting game mode:', error);
+        console.error('Error resetting game mode:', error);
     }
     
     score1 = 0;
@@ -355,7 +339,7 @@ async function resetMatchAndGoToSplash() {
         modeScreen.style.display = 'none';
     }
     
-    // ✅ FIXED: Show scoreboard (in case it was hidden)
+    // FIXED: Show scoreboard in case it was hidden
     const scoreboard = document.querySelector('.scoreboard');
     if (scoreboard) {
         scoreboard.classList.remove('hidden');
@@ -364,24 +348,20 @@ async function resetMatchAndGoToSplash() {
     updateDisplay();
     
     splashDismissed = false;
-    
     const splashScreen = document.getElementById('splashScreen');
     if (splashScreen) {
         splashScreen.classList.add('active');
+        console.log('Match and mode reset complete - splash screen displayed');
     }
-    
-    console.log('✅ Match and mode reset complete - splash screen displayed');
 }
 
-// =================================================================================================
-// TOAST NOTIFICATIONS
-// =================================================================================================
+// ===== TOAST NOTIFICATIONS =====
 function showToast(action, team, gameState) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
     
     const teamName = team === 'black' ? 'BLACK' : 'YELLOW';
-    let icon = '🎯';
+    let icon = '⚪';
     let title = 'POINT SCORED';
     let message = `${teamName} team scored!`;
     let toastType = 'toast-point';
@@ -394,7 +374,7 @@ function showToast(action, team, gameState) {
     } else if (action === 'set') {
         icon = '🏆';
         title = 'SET WON';
-        message = `${teamName} wins the set! Sets: ${gameState.set1}-${gameState.set2}`;
+        message = `${teamName} wins the set! Sets ${gameState.set1}-${gameState.set2}`;
         toastType = 'toast-set';
     } else if (action === 'match') {
         icon = '👑';
@@ -432,9 +412,7 @@ function removeToast(toast) {
     }, 400);
 }
 
-// =================================================================================================
-// SETUP CLICKABLE TEAMS
-// =================================================================================================
+// ===== SETUP CLICKABLE TEAMS =====
 function setupClickableTeams() {
     const blackTeam = document.querySelector('.team-section.black-team');
     const yellowTeam = document.querySelector('.team-section.yellow-team');
@@ -500,9 +478,7 @@ function setupClickableTeams() {
     }
 }
 
-// =================================================================================================
-// LOGO SETUP
-// =================================================================================================
+// ===== LOGO SETUP =====
 function setupLogo() {
     const logo = document.getElementById('logoClick');
     const logoImg = document.getElementById('logoImg');
@@ -510,11 +486,15 @@ function setupLogo() {
     
     if (logoImg) {
         logoImg.onload = function() {
-            if (logo) logo.classList.remove('no-image');
+            if (logo) {
+                logo.classList.remove('no-image');
+            }
         };
         
         logoImg.onerror = function() {
-            if (logo) logo.classList.add('no-image');
+            if (logo) {
+                logo.classList.add('no-image');
+            }
         };
         
         if (logoImg.complete) {
@@ -540,9 +520,7 @@ function setupLogo() {
     }
 }
 
-// =================================================================================================
-// GAME STATE UPDATE
-// =================================================================================================
+// ===== GAME STATE UPDATE =====
 function updateFromGameState(gameState) {
     score1 = gameState.score1;
     score2 = gameState.score2;
@@ -583,15 +561,13 @@ function updateDisplay() {
     if (setsYellowEl) setsYellowEl.textContent = sets2;
 }
 
-// =================================================================================================
-// MANUAL POINT ADDITION
-// =================================================================================================
+// ===== MANUAL POINT ADDITION =====
 async function addPointManual(team) {
     try {
         const response = await fetch(`${API_BASE}/addpoint`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team: team})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team: team })
         });
         const data = await response.json();
         if (data.success) {
@@ -600,7 +576,7 @@ async function addPointManual(team) {
             alert(data.error);
         }
     } catch (error) {
-        alert(`Network error: ${error.message}`);
+        alert('Network error: ' + error.message);
     }
 }
 
@@ -608,21 +584,19 @@ async function subtractPoint(team) {
     try {
         const response = await fetch(`${API_BASE}/subtractpoint`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team: team})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team: team })
         });
         const data = await response.json();
         if (!data.success) {
             alert(data.error);
         }
     } catch (error) {
-        alert(`Network error: ${error.message}`);
+        alert('Network error: ' + error.message);
     }
 }
 
-// =================================================================================================
-// CLICK FEEDBACK
-// =================================================================================================
+// ===== CLICK FEEDBACK =====
 function showClickFeedback(team) {
     const feedback = document.getElementById(team === 'black' ? 'clickFeedbackBlack' : 'clickFeedbackYellow');
     if (feedback) {
@@ -633,9 +607,7 @@ function showClickFeedback(team) {
     }
 }
 
-// =================================================================================================
-// WINNER DISPLAY
-// =================================================================================================
+// ===== WINNER DISPLAY =====
 async function fetchMatchDataAndDisplay() {
     try {
         const response = await fetch(`${API_BASE}/getmatchdata`);
@@ -644,7 +616,7 @@ async function fetchMatchDataAndDisplay() {
             displayWinnerWithData(data.matchdata);
         }
     } catch (error) {
-        console.error('❌ Error fetching match data:', error);
+        console.error('Error fetching match data:', error);
     }
 }
 
@@ -663,16 +635,11 @@ function displayWinnerWithData(matchData) {
     
     if (winnerTeamName) {
         winnerTeamName.textContent = matchData.winnername;
-        winnerTeamName.className = `winner-team-name ${matchData.winnerteam}`;
+        winnerTeamName.className = 'winner-team-name ' + matchData.winnerteam;
     }
     
-    if (finalSetsScore) {
-        finalSetsScore.textContent = matchData.finalsetsscore;
-    }
-    
-    if (matchDuration) {
-        matchDuration.textContent = matchData.matchduration;
-    }
+    if (finalSetsScore) finalSetsScore.textContent = matchData.finalsetsscore;
+    if (matchDuration) matchDuration.textContent = matchData.matchduration;
     
     if (setsTableBody && matchData.setsbreakdown) {
         let tableHTML = '';
@@ -702,9 +669,7 @@ function displayWinnerWithData(matchData) {
     }
 }
 
-// =================================================================================================
-// MATCH RESET
-// =================================================================================================
+// ===== MATCH RESET =====
 async function resetMatch() {
     await resetMatchAndGoToSplash();
 }
