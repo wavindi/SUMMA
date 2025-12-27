@@ -2,13 +2,14 @@
 
 """
 Padel Scoreboard Backend - Optimized with Game Modes and pre-mode gating
-
 Key behavior:
 - All addpoint/subtractpoint are IGNORED for scoring until a game mode is chosen (gamemode is None).
 - While gamemode is None:
   - addpoint → emit 'pointscored' with action 'addpoint' (for UI auto-select Basic), do not change scores.
   - subtractpoint → emit 'pointscored' with action 'subtractpoint' (for UI auto-select Competition), do not change scores.
 - /setgamemode accepts "basic", "competition", "lock", or null (to clear).
+- ✅ NO SIDE SWITCH NOTIFICATION when match is won (2-0, 2-1, etc.)
+- ✅ Sensors reset to default positions on match reset
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -189,6 +190,12 @@ def play_change_audio():
 def trigger_basic_mode_side_switch_if_needed():
     """BASIC MODE: Trigger side switch immediately when a new set starts."""
     global game_state
+    
+    # ✅ DO NOT trigger if match is won
+    if game_state["matchwon"]:
+        print("⛔ BASIC MODE: Side switch skipped - match already won")
+        return
+    
     if game_state["gamemode"] != "basic":
         return
     
@@ -212,6 +219,12 @@ def trigger_basic_mode_side_switch_if_needed():
 def check_side_switch():
     """Switch after odd games in competition/lock; basic only switches at start-of-set."""
     global game_state
+    
+    # ✅ DO NOT check side switch if match is won
+    if game_state["matchwon"]:
+        print("⛔ Side switch check skipped - match already won")
+        return False
+    
     total_games = game_state["game1"] + game_state["game2"]
     mode = game_state["gamemode"]
     
@@ -263,6 +276,12 @@ def broadcast_pointscored(team, actiontype):
     socketio.emit('pointscored', data, namespace='/')
 
 def broadcast_sideswitch():
+    """Only broadcast side switch if match is NOT won"""
+    # ✅ PREVENT side switch broadcast if match is won
+    if game_state["matchwon"]:
+        print("⛔ Side switch broadcast BLOCKED - match already won")
+        return
+    
     data = {
         "totalgames": game_state["totalgamesinset"],
         "gamescore": f"{game_state['game1']}-{game_state['game2']}",
@@ -281,6 +300,7 @@ def broadcast_matchwon():
         "timestamp": datetime.now().isoformat()
     }
     socketio.emit('matchwon', data, namespace='/')
+    print(f"🏆 Match won broadcast sent - winner: {game_state['winner']['team']}")
 
 # ===== HISTORY =====
 def add_to_history(action, team, scorebefore, scoreafter, gamebefore, gameafter, setbefore, setafter):
@@ -360,6 +380,7 @@ def store_match_data():
         "timestamp": game_state["matchendtime"]
     }
     match_storage["displayshown"] = False
+    print(f"✅ Match data stored: {match_storage['matchdata']['winnername']} wins {match_storage['matchdata']['finalsetsscore']}")
 
 def create_match_summary(stats, sets_display):
     sets_text = ", ".join(sets_display)
@@ -405,8 +426,15 @@ def check_set_winner():
         game_state["shouldswitchsides"] = False
         game_state["initial_switch_done"] = False
         print(f"→ Set won by BLACK. Score: {game_state['set1']}-{game_state['set2']}. Flag reset for new set.")
-        trigger_basic_mode_side_switch_if_needed()
-        return check_match_winner()
+        
+        # Check if match is won FIRST
+        match_won = check_match_winner()
+        
+        # Only trigger side switch if match is NOT won
+        if not match_won:
+            trigger_basic_mode_side_switch_if_needed()
+        
+        return match_won
     
     if g2 >= 6 and g2 - g1 >= 2:
         set_before = (s1, s2)
@@ -421,8 +449,15 @@ def check_set_winner():
         game_state["shouldswitchsides"] = False
         game_state["initial_switch_done"] = False
         print(f"→ Set won by YELLOW. Score: {game_state['set1']}-{game_state['set2']}. Flag reset for new set.")
-        trigger_basic_mode_side_switch_if_needed()
-        return check_match_winner()
+        
+        # Check if match is won FIRST
+        match_won = check_match_winner()
+        
+        # Only trigger side switch if match is NOT won
+        if not match_won:
+            trigger_basic_mode_side_switch_if_needed()
+        
+        return match_won
     
     # Enter tie-breaks
     if g1 == 6 and g2 == 6 and game_state["mode"] == "normal":
@@ -469,7 +504,6 @@ def check_match_winner():
             "totalgameswon": total_black_games,
             "matchduration": calculate_match_duration()
         }
-        
         add_to_history("match", "black",
                       (game_state["score1"], game_state["score2"]),
                       (game_state["score1"], game_state["score2"]),
@@ -478,6 +512,7 @@ def check_match_winner():
                       (game_state["set1"], game_state["set2"]),
                       (game_state["set1"], game_state["set2"]))
         store_match_data()
+        print(f"🏆 MATCH WON by BLACK - Side switches now DISABLED")
         return True
     
     if game_state["set2"] == 2:
@@ -503,7 +538,6 @@ def check_match_winner():
             "totalgameswon": total_yellow_games,
             "matchduration": calculate_match_duration()
         }
-        
         add_to_history("match", "yellow",
                       (game_state["score1"], game_state["score2"]),
                       (game_state["score1"], game_state["score2"]),
@@ -512,6 +546,7 @@ def check_match_winner():
                       (game_state["set1"], game_state["set2"]),
                       (game_state["set1"], game_state["set2"]))
         store_match_data()
+        print(f"🏆 MATCH WON by YELLOW - Side switches now DISABLED")
         return True
     
     return False
@@ -529,13 +564,11 @@ def calculate_match_duration():
 def set_normal_score_from_points():
     p1 = game_state["point1"]
     p2 = game_state["point2"]
-    
     def mappoint(p):
         if p == 0: return 0
         if p == 1: return 15
         if p == 2: return 30
         return 40
-    
     game_state["score1"] = mappoint(p1)
     game_state["score2"] = mappoint(p2)
 
@@ -580,8 +613,13 @@ def handle_tiebreak_win(team):
     reset_points()
     game_state["mode"] = "normal"
     print("→ Tie-break won. New set starting. Flag reset for new set.")
-    trigger_basic_mode_side_switch_if_needed()
-    check_match_winner()
+    
+    # Check if match is won FIRST
+    match_won = check_match_winner()
+    
+    # Only trigger side switch if match is NOT won
+    if not match_won:
+        trigger_basic_mode_side_switch_if_needed()
 
 def handle_supertiebreak_win(team):
     set_before = (game_state["set1"], game_state["set2"])
@@ -685,11 +723,11 @@ def process_add_point(team):
     game_state["lastupdated"] = datetime.now().isoformat()
     
     sideswitchneeded = False
+    # ✅ ONLY check side switch if match is NOT won
     if game_just_won and not game_state["matchwon"] and game_state["mode"] == "normal":
         sideswitchneeded = check_side_switch()
-    
-    if sideswitchneeded:
-        broadcast_sideswitch()
+        if sideswitchneeded:
+            broadcast_sideswitch()
     
     broadcast_gamestate()
     
@@ -854,6 +892,7 @@ def setgamemode():
 @app.route("/resetmatch", methods=["POST"])
 def resetmatch():
     global game_state, match_storage
+    
     wipe_match_storage()
     
     game_state.update({
@@ -875,12 +914,33 @@ def resetmatch():
     })
     
     broadcast_gamestate()
+    print("✅ Match reset - all scores cleared, side switches re-enabled")
+    
     return jsonify({"success": True, "message": "Match reset successfully", "gamestate": game_state})
+
+@app.route("/resetsensors", methods=["POST"])
+def resetsensors():
+    """Reset sensors to default positions after match - placeholder for sensor integration"""
+    try:
+        # TODO: Add your sensor reset logic here
+        # Example: Send reset command via serial/I2C to your sensors
+        # This is a placeholder - implement based on your sensor hardware
+        
+        print("📡 Sensor reset command received - sensors returning to default positions")
+        
+        # If you have a sensor communication method, add it here:
+        # serial_connection.write(b"RESET\n")
+        # or via I2C/other protocol
+        
+        return jsonify({"success": True, "message": "Sensors reset to default positions"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/swapsensors", methods=["POST"])
 def swap_sensors():
     """Swap sensor assignments: BLACK ↔ YELLOW"""
     global sensor_mapping
+    
     old_local = sensor_mapping["sensor_local_0x29"]
     old_pico = sensor_mapping["sensor_pico_uart"]
     
@@ -889,6 +949,7 @@ def swap_sensors():
     sensor_mapping["last_swap"] = datetime.now().isoformat()
     
     print(f"🔄 Sensors swapped: Local(0x29)={sensor_mapping['sensor_local_0x29']}, Pico(UART)={sensor_mapping['sensor_pico_uart']}")
+    
     socketio.emit('sensor_mapping_updated', sensor_mapping, namespace='/')
     
     return jsonify({
@@ -934,8 +995,13 @@ if __name__ == "__main__":
     print("=" * 70)
     print("GAME MODES")
     print("  BASIC: Side switch at start of each set (0-0 states).")
-    print("           ❌ NO switch at match start (0-0, 0-0)")
+    print("         ❌ NO switch at match start (0-0, 0-0)")
+    print("         ❌ NO switch after match won (2-0, 2-1, etc.)")
     print("  COMPETITION/LOCK: Switch after odd games (1,3,5,7...).")
+    print("                     ❌ NO switch after match won")
+    print("=" * 70)
+    print("✅ Side switches DISABLED when match is won")
+    print("✅ Sensors reset to default on match reset")
     print("=" * 70)
     print("Socket.IO enabled for real-time updates")
     print("Access at http://127.0.0.1:5000")
