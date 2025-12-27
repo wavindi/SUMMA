@@ -51,6 +51,7 @@ let winnerDismissTimeout = null;
 let stageTimeout = null;
 let gameMode = null;
 let isScoreboardActive = false;
+let matchWonFlag = false;  // Flag to prevent side switch after match won
 
 const API_BASE = "http://127.0.0.1:5000";
 
@@ -99,6 +100,12 @@ function handleSensorInput(data) {
 
 // ===== SIDE SWITCH HANDLER (FULL-SCREEN RESPONSIVE) =====
 function handleSideSwitch(data) {
+    // IGNORE side switch if match is already won
+    if (matchWonFlag) {
+        console.log('⛔ Side switch ignored - match already won');
+        return;
+    }
+    
     console.log('🔄 CHANGE SIDES - Total games:', data.totalgames, 'Score:', data.gamescore, 'Sets:', data.setscore);
     showSideSwitchNotification(data);
 }
@@ -282,7 +289,7 @@ function clearWinnerTimeout() {
 }
 
 async function resetMatchAndGoToSplash() {
-    console.log('Resetting match, mode, and going to splash...');
+    console.log('Resetting match, mode, sensors, and going to splash...');
     
     try {
         const resetResponse = await fetch(`${API_BASE}/resetmatch`, {
@@ -311,6 +318,21 @@ async function resetMatchAndGoToSplash() {
         console.error('Error resetting game mode:', error);
     }
     
+    // Reset sensors to default positions
+    try {
+        const sensorResponse = await fetch(`${API_BASE}/resetsensors`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const sensorData = await sensorResponse.json();
+        if (sensorData.success) {
+            console.log('📡 Sensors reset to default positions');
+        }
+    } catch (error) {
+        console.error('Error resetting sensors:', error);
+    }
+    
+    // Reset local variables
     score1 = 0;
     score2 = 0;
     games1 = 0;
@@ -323,6 +345,9 @@ async function resetMatchAndGoToSplash() {
     matchStartTime = Date.now();
     gameMode = null;
     isScoreboardActive = false;
+    matchWonFlag = false;  // RESET match won flag
+    
+    console.log('🔄 Match won flag reset - side switches re-enabled');
     
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
@@ -637,6 +662,10 @@ function displayWinnerWithData(matchData) {
     const finalSetsScore = document.getElementById('finalSetsScore');
     const matchDuration = document.getElementById('matchDuration');
     const setsTableBody = document.getElementById('setsTableBody');
+    
+    // SET MATCH WON FLAG - prevents side switch notifications
+    matchWonFlag = true;
+    console.log('🏆 Match won flag set - side switches disabled');
     
     // Clear any existing timeout
     clearWinnerTimeout();
