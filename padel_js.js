@@ -48,6 +48,7 @@ let setsHistory = [];
 let matchStartTime = Date.now();
 let splashDismissed = false;
 let winnerDismissTimeout = null;
+let stageTimeout = null;
 let gameMode = null;
 let isScoreboardActive = false;
 
@@ -103,7 +104,6 @@ function handleSideSwitch(data) {
 }
 
 function showSideSwitchNotification(data) {
-    // Remove existing notification if any
     const existing = document.getElementById('sideSwitchNotification');
     if (existing) {
         existing.remove();
@@ -117,7 +117,7 @@ function showSideSwitchNotification(data) {
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.75);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -129,17 +129,16 @@ function showSideSwitchNotification(data) {
     notification.innerHTML = `
         <div style="text-align: center; color: white; width: 100%; padding: 0 5vw;">
             <div style="font-size: 25vh; margin-bottom: 4vh; line-height: 1;">🔄</div>
-            <div style="font-size: 12vh; font-weight: bold; margin-bottom: 6vh; text-transform: uppercase; letter-spacing: 0.5vw;">CHANGE SIDES!</div>
-            <div style="font-size: 8vh; opacity: 0.9; margin-top: 5vh; font-weight: 600;">Games: ${data.gamescore}</div>
-            <div style="font-size: 8vh; opacity: 0.9; margin-top: 3vh; font-weight: 600;">Sets: ${data.setscore}</div>
+            <div style="font-size: 12vh; font-weight: bold; margin-bottom: 6vh; text-transform: uppercase; letter-spacing: 0.5vw; text-shadow: 0 0 20px rgba(0,0,0,0.8);">CHANGE SIDES!</div>
+            <div style="font-size: 8vh; opacity: 0.9; margin-top: 5vh; font-weight: 600; text-shadow: 0 0 15px rgba(0,0,0,0.8);">Games: ${data.gamescore}</div>
+            <div style="font-size: 8vh; opacity: 0.9; margin-top: 3vh; font-weight: 600; text-shadow: 0 0 15px rgba(0,0,0,0.8);">Sets: ${data.setscore}</div>
         </div>
     `;
     
     document.body.appendChild(notification);
     
-    console.log('🔄 Side switch notification displayed (FULLSCREEN):', data);
+    console.log('🔄 Side switch notification displayed (FULLSCREEN - TRANSPARENT):', data);
     
-    // Auto-dismiss after 5 seconds
     setTimeout(() => {
         notification.style.animation = 'fadeOut 0.3s ease-out';
         setTimeout(() => {
@@ -174,7 +173,6 @@ function dismissSplash() {
         const splashScreen = document.getElementById('splashScreen');
         const scoreboard = document.querySelector('.scoreboard');
         
-        // FIXED: Hide scoreboard IMMEDIATELY before splash fades
         if (scoreboard) {
             scoreboard.classList.add('hidden');
         }
@@ -194,7 +192,6 @@ function showModeSelection() {
     const scoreboard = document.querySelector('.scoreboard');
     
     if (modeScreen) {
-        // FIXED: Hide scoreboard while mode selection is active
         if (scoreboard) {
             scoreboard.classList.add('hidden');
         }
@@ -234,7 +231,6 @@ async function selectMode(mode) {
         setTimeout(() => {
             modeScreen.style.display = 'none';
             
-            // FIXED: Show scoreboard when mode is selected
             if (scoreboard) {
                 scoreboard.classList.remove('hidden');
                 isScoreboardActive = true;
@@ -267,12 +263,8 @@ function setupWinnerScreenClickDismiss() {
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
         winnerDisplay.addEventListener('click', function(e) {
-            if (e.target.closest('.action-button')) return;
-            if (winnerDisplay.style.display === 'flex') {
-                console.log('Winner screen clicked - resetting match and going to splash');
-                clearWinnerTimeout();
-                resetMatchAndGoToSplash();
-            }
+            clearWinnerTimeout();
+            resetMatchAndGoToSplash();
         });
         console.log('Winner screen click-to-dismiss enabled');
     }
@@ -282,6 +274,10 @@ function clearWinnerTimeout() {
     if (winnerDismissTimeout) {
         clearTimeout(winnerDismissTimeout);
         winnerDismissTimeout = null;
+    }
+    if (stageTimeout) {
+        clearTimeout(stageTimeout);
+        stageTimeout = null;
     }
 }
 
@@ -331,6 +327,13 @@ async function resetMatchAndGoToSplash() {
     const winnerDisplay = document.getElementById('winnerDisplay');
     if (winnerDisplay) {
         winnerDisplay.style.display = 'none';
+        const stage1 = document.getElementById('stage1');
+        const stage2 = document.getElementById('stage2');
+        if (stage1) {
+            stage1.style.display = 'flex';
+            stage1.classList.remove('fade-out');
+        }
+        if (stage2) stage2.style.display = 'none';
     }
     
     const modeScreen = document.getElementById('modeSelectionScreen');
@@ -339,7 +342,6 @@ async function resetMatchAndGoToSplash() {
         modeScreen.style.display = 'none';
     }
     
-    // FIXED: Show scoreboard in case it was hidden
     const scoreboard = document.querySelector('.scoreboard');
     if (scoreboard) {
         scoreboard.classList.remove('hidden');
@@ -607,7 +609,7 @@ function showClickFeedback(team) {
     }
 }
 
-// ===== WINNER DISPLAY =====
+// ===== 2-STAGE WINNER DISPLAY =====
 async function fetchMatchDataAndDisplay() {
     try {
         const response = await fetch(`${API_BASE}/getmatchdata`);
@@ -628,14 +630,27 @@ function displayWinner(data) {
 
 function displayWinnerWithData(matchData) {
     const winnerDisplay = document.getElementById('winnerDisplay');
-    const winnerTeamName = document.getElementById('winnerTeamName');
+    const stage1 = document.getElementById('stage1');
+    const stage2 = document.getElementById('stage2');
+    const winnerTeamNameStage1 = document.getElementById('winnerTeamNameStage1');
+    const winnerTeamNameStage2 = document.getElementById('winnerTeamNameStage2');
     const finalSetsScore = document.getElementById('finalSetsScore');
     const matchDuration = document.getElementById('matchDuration');
     const setsTableBody = document.getElementById('setsTableBody');
     
-    if (winnerTeamName) {
-        winnerTeamName.textContent = matchData.winnername;
-        winnerTeamName.className = 'winner-team-name ' + matchData.winnerteam;
+    // Clear any existing timeout
+    clearWinnerTimeout();
+
+    // === STAGE 1: Show trophy + title + winner name ===
+    if (winnerTeamNameStage1) {
+        winnerTeamNameStage1.textContent = matchData.winnername;
+        winnerTeamNameStage1.className = 'winner-team-name ' + matchData.winnerteam;
+    }
+
+    // Populate Stage 2 data (hidden for now)
+    if (winnerTeamNameStage2) {
+        winnerTeamNameStage2.textContent = matchData.winnername;
+        winnerTeamNameStage2.className = 'winner-team-name-small ' + matchData.winnerteam;
     }
     
     if (finalSetsScore) finalSetsScore.textContent = matchData.finalsetsscore;
@@ -657,16 +672,42 @@ function displayWinnerWithData(matchData) {
         });
         setsTableBody.innerHTML = tableHTML;
     }
-    
+
+    // Show Stage 1
+    if (stage1) {
+        stage1.style.display = 'flex';
+        stage1.classList.remove('fade-out');
+    }
+    if (stage2) stage2.style.display = 'none';
     if (winnerDisplay) {
         winnerDisplay.style.display = 'flex';
         isScoreboardActive = false;
-        
-        clearWinnerTimeout();
-        winnerDismissTimeout = setTimeout(() => {
-            resetMatchAndGoToSplash();
-        }, 30000);
     }
+
+    console.log('🏆 STAGE 1: Showing trophy + winner name (5 seconds)');
+
+    // After 5 seconds, transition to Stage 2
+    stageTimeout = setTimeout(() => {
+        if (stage1) stage1.classList.add('fade-out');
+        
+        setTimeout(() => {
+            if (stage1) {
+                stage1.style.display = 'none';
+                stage1.classList.remove('fade-out');
+            }
+            if (stage2) stage2.style.display = 'flex';
+            console.log('📊 STAGE 2: Showing BIGGER stats + table (no overflow)');
+        }, 500);
+    }, 5000);
+}
+
+function calculateMatchDuration() {
+    const start = new Date(matchStartTime);
+    const end = new Date();
+    const diff = end - start;
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return `${minutes}m ${seconds}s`;
 }
 
 // ===== MATCH RESET =====
