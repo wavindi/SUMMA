@@ -461,7 +461,7 @@ def check_set_winner():
     
     # Enter tie-breaks
     if g1 == 6 and g2 == 6 and game_state["mode"] == "normal":
-        if (s1 == 0 and s2 == 0) or (s1 != s2 == 1):
+        if (s1 == 0 and s2 == 0) or (s1 == 1 and s2 == 0) or (s1 == 0 and s2 == 1):
             print("→ Entering NORMAL TIE BREAK mode")
             game_state["mode"] = "tiebreak"
             game_state["point1"] = 0
