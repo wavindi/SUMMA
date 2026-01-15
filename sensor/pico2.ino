@@ -29,8 +29,8 @@
 #define RANGING_FREQ 15      // 15Hz update rate
 
 // GPIO Pin Definitions (for reference - handled by Wire and Serial)
-#define I2C_SDA 4            // GP4
-#define I2C_SCL 5            // GP5
+#define I2C_SDA 2            // GP2
+#define I2C_SCL 3            // GP3
 #define UART_TX 0            // GP0
 #define UART_RX 1            // GP1
 
