@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pigpio Software UART Bridge for Dual Picos
+Pigpio Software UART Bridge for Dual Picoss
 This script reads from GPIO 23 and GPIO 24 using pigpio
 and makes the data available to the backend via named pipes (FIFOs)
 """
