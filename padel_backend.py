@@ -55,59 +55,20 @@ sensor_validation = {
 }
 
 def validate_sensors():
-    """Validate that two VL53L5CX sensors are on different I2C addresses."""
+    """Skip I2C validation for UART-only setup."""
     global sensor_validation
-    print("Validating VL53L5CX sensors...")
-    try:
-        bus = SMBus(1)
-        detected_addresses = []
-        for addr in [0x29, 0x39]:
-            try:
-                msg = i2c_msg.write(addr, [0x00])
-                bus.i2c_rdwr(msg)
-                detected_addresses.append(addr)
-                print(f"✓ Sensor found at 0x{addr:02X}")
-            except:
-                pass
-        bus.close()
+    print("⚠️ Sensor validation SKIPPED (UART mode - using Picos on GPIO 23/24)")
+    
+    sensor_validation["validated"] = True
+    sensor_validation["sensor1_address"] = "PICO1_GPIO23"
+    sensor_validation["sensor2_address"] = "PICO2_GPIO24"
+    sensor_validation["status"] = "valid"
+    sensor_validation["error_message"] = None
+    sensor_validation["timestamp"] = datetime.now().isoformat()
+    
+    print("✓ UART sensors assumed valid (Pico-based setup)")
+    return True
 
-        if len(detected_addresses) == 2 and 0x29 in detected_addresses and 0x39 in detected_addresses:
-            sensor_validation["validated"] = True
-            sensor_validation["sensor1_address"] = 0x39
-            sensor_validation["sensor2_address"] = 0x29
-            sensor_validation["status"] = "valid"
-            sensor_validation["error_message"] = None
-            sensor_validation["timestamp"] = datetime.now().isoformat()
-            print("✓ Sensor validation PASSED - Both sensors at different addresses")
-            return True
-        elif len(detected_addresses) == 2 and detected_addresses[0] == detected_addresses[1]:
-            sensor_validation["validated"] = False
-            sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = "ERROR #1: Both sensors at same address 0x29 - Restart SUMMA"
-            sensor_validation["timestamp"] = datetime.now().isoformat()
-            print("✗ Sensor validation FAILED - Both sensors at 0x29")
-            return False
-        elif len(detected_addresses) == 0:
-            sensor_validation["validated"] = False
-            sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = "ERROR #1: No sensors detected - Restart SUMMA"
-            sensor_validation["timestamp"] = datetime.now().isoformat()
-            print("✗ Sensor validation FAILED - No sensors detected")
-            return False
-        else:
-            sensor_validation["validated"] = False
-            sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = f"ERROR #1: Only {len(detected_addresses)} sensor(s) detected - Restart SUMMA"
-            sensor_validation["timestamp"] = datetime.now().isoformat()
-            print(f"✗ Sensor validation FAILED - Only {len(detected_addresses)} sensor(s)")
-            return False
-    except Exception as e:
-        sensor_validation["validated"] = False
-        sensor_validation["status"] = "error"
-        sensor_validation["error_message"] = "ERROR #1: Sensor check failed - Restart SUMMA"
-        sensor_validation["timestamp"] = datetime.now().isoformat()
-        print(f"✗ Sensor validation ERROR: {e}")
-        return False
 
 def run_initial_sensor_validation():
     time.sleep(2)
