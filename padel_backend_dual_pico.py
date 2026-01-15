@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-
 """
-Padel Scoreboard Backend - Dual Pico UART Configuration
-✅ Two Raspberry Pi Picos connected via UART
-✅ Each Pico connected to one VL53L5CX sensor via I2C
-✅ Real-time distance monitoring and automatic scoring
+Padel Scoreboard Backend - Software UART Configuration (GPIO 23 & 24)
+Uses named pipes from pigpio_uart_bridge.py for dual Pico communication
+
+Key behavior:
+- All addpoint/subtractpoint are IGNORED for scoring until a game mode is chosen (gamemode is None).
+- While gamemode is None:
+  - addpoint → emit 'pointscored' with action 'addpoint' (for UI auto-select Basic), do not change scores.
+  - subtractpoint → emit 'pointscored' with action 'subtractpoint' (for UI auto-select Competition), do not change scores.
+- /setgamemode accepts "basic", "competition", "lock", or null (to clear).
+- ✅ NO SIDE SWITCH NOTIFICATION when match is won (2-0, 2-1, etc.)
+- ✅ Sensors reset to default positions on match reset
+- ✅ Automatic ball detection via VL53L5CX sensors through Picos
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -17,7 +24,6 @@ import os
 import time
 import pygame
 import serial
-import serial.tools.list_ports
 
 app = Flask(__name__)
 CORS(app, cors_allowed_origins="*")
@@ -40,20 +46,20 @@ socketio = SocketIO(
 pygame.mixer.init()
 print("🔊 Audio system initialized")
 
-# ===== PICO UART CONFIGURATION =====
+# ===== PICO UART CONFIGURATION (Named Pipes from Bridge) =====
 PICO_CONFIGS = {
     "PICO_1": {
-        "port": "/dev/ttyAMA0",  # Primary UART - adjust based on your setup
+        "port": "/tmp/pico1_serial",  # Named pipe from pigpio bridge (GPIO 23)
         "baudrate": 57600,
         "timeout": 1,
-        "team": "black",  # Default team assignment
+        "team": "black",
         "name": "PICO 1 (Black Team)"
     },
     "PICO_2": {
-        "port": "/dev/ttyS0",    # Secondary UART - adjust based on your setup
+        "port": "/tmp/pico2_serial",  # Named pipe from pigpio bridge (GPIO 24)
         "baudrate": 57600,
         "timeout": 1,
-        "team": "yellow",  # Default team assignment
+        "team": "yellow",
         "name": "PICO 2 (Yellow Team)"
     }
 }
@@ -115,36 +121,26 @@ def get_team_from_pico(pico_name):
 
 # ===== PICO VALIDATION =====
 def test_pico_connection(pico_name, config):
-    """Test if Pico is connected and responding"""
+    """Test if Pico named pipe exists and has data"""
     try:
-        ser = serial.Serial(
-            port=config["port"],
-            baudrate=config["baudrate"],
-            timeout=config["timeout"]
-        )
-
-        # Clear any stale data
-        ser.reset_input_buffer()
-        time.sleep(0.5)
-
-        # Check if there's any data available
-        if ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8', errors='ignore').strip()
-            ser.close()
+        if not os.path.exists(config["port"]):
+            return False
+        import fcntl
+        fd = os.open(config["port"], os.O_RDONLY | os.O_NONBLOCK)
+        try:
+            data = os.read(fd, 100)
+            os.close(fd)
+            return len(data) > 0
+        except:
+            os.close(fd)
             return True
-
-        ser.close()
-        return False
-
-    except serial.SerialException:
-        return False
-    except Exception:
+    except Exception as e:
         return False
 
 def validate_picos():
-    """Validate that both Picos are connected and responding."""
+    """Validate that both Pico named pipes are available."""
     global sensor_validation
-    print("🔌 Validating Raspberry Pi Pico connections...")
+    print("🔌 Validating Raspberry Pi Pico connections (via named pipes)...")
 
     try:
         pico1_ok = test_pico_connection("PICO_1", PICO_CONFIGS["PICO_1"])
@@ -155,34 +151,36 @@ def validate_picos():
         sensor_validation["timestamp"] = datetime.now().isoformat()
 
         if pico1_ok:
-            print(f"✓ PICO_1 found on {PICO_CONFIGS['PICO_1']['port']}")
+            print(f"✓ PICO_1 pipe found at {PICO_CONFIGS['PICO_1']['port']}")
         else:
-            print(f"✗ PICO_1 NOT found on {PICO_CONFIGS['PICO_1']['port']}")
+            print(f"✗ PICO_1 pipe NOT found at {PICO_CONFIGS['PICO_1']['port']}")
 
         if pico2_ok:
-            print(f"✓ PICO_2 found on {PICO_CONFIGS['PICO_2']['port']}")
+            print(f"✓ PICO_2 pipe found at {PICO_CONFIGS['PICO_2']['port']}")
         else:
-            print(f"✗ PICO_2 NOT found on {PICO_CONFIGS['PICO_2']['port']}")
+            print(f"✗ PICO_2 pipe NOT found at {PICO_CONFIGS['PICO_2']['port']}")
 
         if pico1_ok and pico2_ok:
             sensor_validation["validated"] = True
             sensor_validation["status"] = "valid"
             sensor_validation["error_message"] = None
-            print("✓ Pico validation PASSED - Both Picos connected")
+            print("✓ Pico validation PASSED - Both named pipes available")
+            print("💡 Make sure pigpio_uart_bridge.py is running!")
             return True
         elif not pico1_ok and not pico2_ok:
             sensor_validation["validated"] = False
             sensor_validation["status"] = "error"
-            sensor_validation["error_message"] = "ERROR #1: No Picos detected - Check connections"
-            print("✗ Pico validation FAILED - No Picos detected")
+            sensor_validation["error_message"] = "ERROR #1: No named pipes detected - Start pigpio_uart_bridge.py first!"
+            print("✗ Pico validation FAILED - No named pipes detected")
+            print("💡 RUN: python3 pigpio_uart_bridge.py")
             return False
         else:
             sensor_validation["validated"] = False
             sensor_validation["status"] = "warning"
             missing = "PICO_1" if not pico1_ok else "PICO_2"
-            sensor_validation["error_message"] = f"WARNING: {missing} not connected - Partial operation"
+            sensor_validation["error_message"] = f"WARNING: {missing} pipe not found - Partial operation"
             print(f"⚠ Pico validation PARTIAL - {missing} missing")
-            return True  # Allow partial operation
+            return True
 
     except Exception as e:
         sensor_validation["validated"] = False
@@ -200,7 +198,7 @@ def run_initial_sensor_validation():
 
 # ===== PICO DATA READING THREADS =====
 def read_pico_data(pico_name, config):
-    """Thread function to continuously read data from one Pico"""
+    """Thread function to continuously read data from one Pico via named pipe"""
     global sensor_running, pico_data
 
     ser = None
@@ -211,8 +209,18 @@ def read_pico_data(pico_name, config):
 
     while sensor_running:
         try:
-            # Open serial connection
             if ser is None:
+                if not os.path.exists(config["port"]):
+                    if reconnect_attempts == 0:
+                        print(f"[{pico_name}] ⏳ Waiting for named pipe: {config['port']}")
+                        print(f"[{pico_name}] 💡 Make sure pigpio_uart_bridge.py is running!")
+                    time.sleep(2)
+                    reconnect_attempts += 1
+                    if reconnect_attempts > max_reconnect:
+                        print(f"[{pico_name}] ✗ Named pipe not available after {max_reconnect} attempts")
+                        break
+                    continue
+
                 ser = serial.Serial(
                     port=config["port"],
                     baudrate=config["baudrate"],
@@ -227,13 +235,10 @@ def read_pico_data(pico_name, config):
                 print(f"[{pico_name}] ✓ Connected to {config['port']}")
                 reconnect_attempts = 0
 
-            # Read line from serial
             if ser.in_waiting > 0:
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
 
-                # Check for protocol markers
                 if line == "DATA_START":
-                    # Read 16 zones of data
                     zones = []
                     for i in range(16):
                         data_line = ser.readline().decode('utf-8', errors='ignore').strip()
@@ -249,23 +254,19 @@ def read_pico_data(pico_name, config):
                                 pico_data[pico_name]["error_count"] += 1
                             continue
 
-                    # Wait for DATA_END
                     end_marker = ser.readline().decode('utf-8', errors='ignore').strip()
 
                     if end_marker == "DATA_END" and len(zones) == 16:
-                        # Store data
                         with data_lock:
                             pico_data[pico_name]["last_frame"] = zones
                             pico_data[pico_name]["frame_count"] += 1
                             pico_data[pico_name]["connected"] = True
 
-                        # Check for ball detection
                         process_ball_detection(pico_name, zones)
 
-            time.sleep(0.005)  # 5ms polling
+            time.sleep(0.005)
 
         except serial.SerialException:
-            # Connection lost
             with data_lock:
                 pico_data[pico_name]["connected"] = False
 
@@ -287,7 +288,6 @@ def read_pico_data(pico_name, config):
                 pico_data[pico_name]["error_count"] += 1
             time.sleep(0.1)
 
-    # Clean up
     if ser:
         ser.close()
 
@@ -297,29 +297,24 @@ def process_ball_detection(pico_name, zones):
     """Detect ball hit based on distance threshold"""
     global pico_data, game_state
 
-    # Check minimum distance across all zones
     min_distance = min(zone["distance_mm"] for zone in zones)
 
-    # Check if ball detected
     if min_distance < DETECTION_THRESHOLD:
         current_time = time.time()
 
         with data_lock:
             last_detection = pico_data[pico_name]["last_detection"]
 
-            # Debounce - ignore if too soon after last detection
             if current_time - last_detection < MIN_TIME_BETWEEN_HITS:
                 return
 
             pico_data[pico_name]["last_detection"] = current_time
 
-        # Get team assignment for this Pico
         team = get_team_from_pico(pico_name)
 
         print(f"🎾 Ball detected on {pico_name} (Team: {team.upper()}) - Distance: {min_distance}mm")
 
-        # Trigger point scoring
-        if game_state["gamemode"] is not None:  # Only score if mode is selected
+        if game_state["gamemode"] is not None:
             process_add_point(team)
         else:
             print(f"⚠ Ball detected but game mode not selected - ignoring")
@@ -338,29 +333,23 @@ def start_pico_readers():
         pico_data[pico_name]["thread"] = thread
         print(f"✓ Reader thread started for {pico_name}")
 
-# ===== GAME STATE (UNCHANGED) =====
+# ===== GAME STATE =====
 game_state = {
-    # Games/sets/points
     "game1": 0, "game2": 0,
     "set1": 0, "set2": 0,
     "point1": 0, "point2": 0,
     "score1": 0, "score2": 0,
-    # Status
     "matchwon": False,
     "winner": None,
-    # History
     "sethistory": [],
     "matchhistory": [],
     "matchstarttime": datetime.now().isoformat(),
     "matchendtime": None,
     "lastupdated": datetime.now().isoformat(),
-    # Side switching
     "shouldswitchsides": False,
     "totalgamesinset": 0,
     "initial_switch_done": False,
-    # Game phase mode: "normal", "tiebreak", "supertiebreak"
     "mode": "normal",
-    # Game mode selection (UI mode): "basic", "competition", "lock", or None until chosen
     "gamemode": None
 }
 
@@ -393,7 +382,7 @@ def play_change_audio():
     except Exception as e:
         print(f"❌ Error playing audio: {e}")
 
-# ===== SIDE SWITCHING (UNCHANGED) =====
+# ===== SIDE SWITCHING =====
 def trigger_basic_mode_side_switch_if_needed():
     """BASIC MODE: Trigger side switch immediately when a new set starts."""
     global game_state
@@ -435,7 +424,6 @@ def check_side_switch():
     if mode == "basic":
         return False
 
-    # competition/lock
     if (total_games % 2) == 1:
         game_state["shouldswitchsides"] = True
         game_state["totalgamesinset"] = total_games
@@ -444,7 +432,29 @@ def check_side_switch():
     game_state["shouldswitchsides"] = False
     return False
 
-# ===== BROADCAST HELPERS (UNCHANGED) =====
+# ===== SOCKET.IO HANDLERS =====
+@socketio.on('connect')
+def handle_connect():
+    print(f"✓ Client connected: {request.sid}")
+    emit('gamestateupdate', game_state)
+    emit('sensor_validation_result', sensor_validation)
+    if game_state["gamemode"] == "basic":
+        trigger_basic_mode_side_switch_if_needed()
+    return True
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f"✗ Client disconnected: {request.sid}")
+
+@socketio.on('request_gamestate')
+def handle_request_gamestate():
+    emit('gamestateupdate', game_state)
+
+@socketio.on('request_sensor_validation')
+def handle_request_sensor_validation():
+    emit('sensor_validation_result', sensor_validation)
+
+# ===== BROADCAST HELPERS =====
 def broadcast_gamestate():
     socketio.emit('gamestateupdate', game_state, namespace='/')
 
@@ -483,29 +493,7 @@ def broadcast_matchwon():
     socketio.emit('matchwon', data, namespace='/')
     print(f"🏆 Match won broadcast sent - winner: {game_state['winner']['team']}")
 
-# ===== SOCKET.IO HANDLERS (UNCHANGED) =====
-@socketio.on('connect')
-def handle_connect():
-    print(f"✓ Client connected: {request.sid}")
-    emit('gamestateupdate', game_state)
-    emit('sensor_validation_result', sensor_validation)
-    if game_state["gamemode"] == "basic":
-        trigger_basic_mode_side_switch_if_needed()
-    return True
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print(f"✗ Client disconnected: {request.sid}")
-
-@socketio.on('request_gamestate')
-def handle_request_gamestate():
-    emit('gamestateupdate', game_state)
-
-@socketio.on('request_sensor_validation')
-def handle_request_sensor_validation():
-    emit('sensor_validation_result', sensor_validation)
-
-# [HISTORY FUNCTIONS - UNCHANGED - Keeping original code]
+# ===== HISTORY =====
 def add_to_history(action, team, scorebefore, scoreafter, gamebefore, gameafter, setbefore, setafter):
     global game_state
     history_entry = {
@@ -607,7 +595,7 @@ def wipe_match_storage():
         "displayshown": False
     }
 
-# [SET & MATCH LOGIC - UNCHANGED - Keeping all original functions]
+# ===== SET & MATCH LOGIC =====
 def check_set_winner():
     global game_state
     g1 = game_state["game1"]
@@ -615,7 +603,6 @@ def check_set_winner():
     s1 = game_state["set1"]
     s2 = game_state["set2"]
 
-    # Normal set win
     if g1 >= 6 and g1 - g2 >= 2:
         set_before = (s1, s2)
         game_state["set1"] += 1
@@ -658,7 +645,6 @@ def check_set_winner():
 
         return match_won
 
-    # Enter tie-breaks
     if g1 == 6 and g2 == 6 and game_state["mode"] == "normal":
         if (s1 == 0 and s2 == 0) or (s1 == 1 and s2 == 0) or (s1 == 0 and s2 == 1):
             print("→ Entering NORMAL TIE BREAK mode")
@@ -759,7 +745,7 @@ def calculate_match_duration():
         return f"{total_minutes} minutes"
     return "In progress"
 
-# [SCORING LOGIC - UNCHANGED - Keeping all original functions]
+# ===== SCORING =====
 def set_normal_score_from_points():
     p1 = game_state["point1"]
     p2 = game_state["point2"]
@@ -849,7 +835,6 @@ def scoring_gamemode_selected():
 def process_add_point(team):
     global game_state
 
-    # PRE-MODE GATING
     if not scoring_gamemode_selected():
         broadcast_pointscored(team, "addpoint")
         return {"success": True, "ignored": True, "message": "Point ignored until mode is selected", "gamestate": game_state}
@@ -865,7 +850,6 @@ def process_add_point(team):
     game_just_won = False
     phase_mode = game_state["mode"]
 
-    # Increment internal points
     if team == "black":
         game_state["point1"] += 1
     else:
@@ -1206,11 +1190,14 @@ def healthcheck():
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("Padel Scoreboard Backend - DUAL PICO UART CONFIGURATION 🎾")
+    print("Padel Scoreboard Backend - SOFTWARE UART CONFIGURATION 🎾")
     print("=" * 70)
-    print("HARDWARE SETUP")
+    print("HARDWARE SETUP (GPIO 23 & 24 via pigpio bridge)")
     print("  PICO_1: {} → Team {}".format(PICO_CONFIGS["PICO_1"]["port"], sensor_mapping["pico_1_team"].upper()))
     print("  PICO_2: {} → Team {}".format(PICO_CONFIGS["PICO_2"]["port"], sensor_mapping["pico_2_team"].upper()))
+    print("=" * 70)
+    print("⚠️  IMPORTANT: Start pigpio_uart_bridge.py FIRST!")
+    print("   Run in another terminal: python3 pigpio_uart_bridge.py")
     print("=" * 70)
     print("GAME MODES")
     print("  BASIC: Side switch at start of each set (0-0 states).")
