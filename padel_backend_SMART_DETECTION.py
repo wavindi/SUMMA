@@ -60,13 +60,11 @@ PICO_CONFIGS = {
     }
 }
 
-
 # ===== SMART DETECTION THRESHOLDS =====
 CALIBRATION_SAMPLES = 10              # Number of samples for baseline calibration
 DISTANCE_DROP_THRESHOLD = 500         # mm - Significant drop from baseline indicates ball
 VERY_CLOSE_THRESHOLD = 300            # mm - Ball hit this sensor's side (other team scored)
 MIN_TIME_BETWEEN_HITS = 1.0           # seconds - Debounce time
-
 
 # ===== SENSOR/PICO STATE =====
 sensor_validation = {
@@ -126,6 +124,10 @@ def get_team_from_pico(pico_name):
     elif pico_name == "PICO_2":
         return sensor_mapping["pico_2_team"]
     return None
+
+def get_opposite_team(team):
+    """Get the opposite team"""
+    return "yellow" if team == "black" else "black"
 
 # ===== PICO VALIDATION =====
 def test_pico_connection(pico_name, config):
@@ -193,6 +195,97 @@ def run_initial_sensor_validation():
     validate_picos()
     socketio.emit('sensor_validation_result', sensor_validation)
     print(f"→ Pico validation result broadcasted: {sensor_validation['status']}")
+
+
+# ===== CALIBRATION LOGIC =====
+def calibrate_sensor(pico_name):
+    """
+    Calibrate sensor by measuring baseline distance (no ball present)
+    Takes multiple samples and averages them
+    """
+    global pico_data
+
+    print(f"🔧 [{pico_name}] Starting calibration...")
+    print(f"    Please ensure NO BALL is in front of sensor!")
+
+    samples = []
+    with data_lock:
+        pico_data[pico_name]["calibration_samples"] = []
+        pico_data[pico_name]["calibrated"] = False
+
+    # Collect baseline samples
+    for i in range(CALIBRATION_SAMPLES):
+        with data_lock:
+            last_frame = pico_data[pico_name]["last_frame"]
+
+        if last_frame and len(last_frame) == 16:
+            # Get minimum distance from all zones
+            min_distance = min(zone["distance_mm"] for zone in last_frame)
+            samples.append(min_distance)
+            print(f"    Sample {i+1}/{CALIBRATION_SAMPLES}: {min_distance}mm")
+
+        time.sleep(0.2)  # 200ms between samples
+
+    # Calculate baseline if we got enough samples
+    if len(samples) >= CALIBRATION_SAMPLES // 2:  # At least half the samples
+        baseline = sum(samples) / len(samples)
+
+        with data_lock:
+            pico_data[pico_name]["baseline_distance"] = baseline
+            pico_data[pico_name]["calibrated"] = True
+            pico_data[pico_name]["calibration_samples"] = samples
+
+        team = get_team_from_pico(pico_name)
+        print(f"✓ [{pico_name}] Calibration COMPLETE!")
+        print(f"    Baseline: {baseline:.0f}mm | Team: {team.upper()}")
+        print(f"    Detection threshold: {DISTANCE_DROP_THRESHOLD}mm drop from baseline")
+
+        # Broadcast calibration complete event
+        socketio.emit('calibration_complete', {
+            "pico": pico_name,
+            "baseline": baseline,
+            "team": team,
+            "samples": len(samples),
+            "timestamp": datetime.now().isoformat()
+        })
+
+        return True
+    else:
+        print(f"✗ [{pico_name}] Calibration FAILED - Not enough valid samples")
+        return False
+
+def auto_calibrate_all_sensors():
+    """Auto-calibrate both sensors when they're both connected"""
+    print("\n" + "="*70)
+    print("AUTO-CALIBRATION STARTING")
+    print("="*70)
+
+    # Wait for both sensors to have data
+    max_wait = 10
+    for i in range(max_wait):
+        with data_lock:
+            pico1_ready = pico_data["PICO_1"]["last_frame"] is not None
+            pico2_ready = pico_data["PICO_2"]["last_frame"] is not None
+
+        if pico1_ready and pico2_ready:
+            break
+
+        print(f"Waiting for sensor data... ({i+1}/{max_wait})")
+        time.sleep(1)
+
+    # Calibrate both
+    pico1_ok = calibrate_sensor("PICO_1")
+    time.sleep(0.5)
+    pico2_ok = calibrate_sensor("PICO_2")
+
+    if pico1_ok and pico2_ok:
+        print("\n✓ AUTO-CALIBRATION COMPLETE - System ready for ball detection!")
+        print("="*70 + "\n")
+        return True
+    else:
+        print("\n⚠ AUTO-CALIBRATION INCOMPLETE - Some sensors failed")
+        print("="*70 + "\n")
+        return False
 
 # ===== PICO DATA READING THREADS =====
 def read_pico_data(pico_name, config):
@@ -295,7 +388,7 @@ def read_pico_data(pico_name, config):
                             pico_data[pico_name]["frame_count"] += 1
                             pico_data[pico_name]["connected"] = True
 
-                        process_smart_ball_detection(pico_name, zones)
+                        process_ball_detection(pico_name, zones)
 
             except IOError:
                 raise
@@ -333,98 +426,7 @@ def read_pico_data(pico_name, config):
 
     print(f"[{pico_name}] Thread stopped")
 
-
-# ===== CALIBRATION LOGIC =====
-def calibrate_sensor(pico_name):
-    """
-    Calibrate sensor by measuring baseline distance (no ball present)
-    Takes multiple samples and averages them
-    """
-    global pico_data
-
-    print(f"🔧 [{pico_name}] Starting calibration...")
-    print(f"    Please ensure NO BALL is in front of sensor!")
-
-    samples = []
-    with data_lock:
-        pico_data[pico_name]["calibration_samples"] = []
-        pico_data[pico_name]["calibrated"] = False
-
-    # Collect baseline samples
-    for i in range(CALIBRATION_SAMPLES):
-        with data_lock:
-            last_frame = pico_data[pico_name]["last_frame"]
-
-        if last_frame and len(last_frame) == 16:
-            # Get minimum distance from all zones
-            min_distance = min(zone["distance_mm"] for zone in last_frame)
-            samples.append(min_distance)
-            print(f"    Sample {i+1}/{CALIBRATION_SAMPLES}: {min_distance}mm")
-
-        time.sleep(0.2)  # 200ms between samples
-
-    # Calculate baseline if we got enough samples
-    if len(samples) >= CALIBRATION_SAMPLES // 2:  # At least half the samples
-        baseline = sum(samples) / len(samples)
-
-        with data_lock:
-            pico_data[pico_name]["baseline_distance"] = baseline
-            pico_data[pico_name]["calibrated"] = True
-            pico_data[pico_name]["calibration_samples"] = samples
-
-        team = get_team_from_pico(pico_name)
-        print(f"✓ [{pico_name}] Calibration COMPLETE!")
-        print(f"    Baseline: {baseline:.0f}mm | Team: {team.upper()}")
-        print(f"    Detection threshold: {DISTANCE_DROP_THRESHOLD}mm drop from baseline")
-
-        # Broadcast calibration complete event
-        socketio.emit('calibration_complete', {
-            "pico": pico_name,
-            "baseline": baseline,
-            "team": team,
-            "samples": len(samples),
-            "timestamp": datetime.now().isoformat()
-        })
-
-        return True
-    else:
-        print(f"✗ [{pico_name}] Calibration FAILED - Not enough valid samples")
-        return False
-
-def auto_calibrate_all_sensors():
-    """Auto-calibrate both sensors when they're both connected"""
-    print("\n" + "="*70)
-    print("AUTO-CALIBRATION STARTING")
-    print("="*70)
-
-    # Wait for both sensors to have data
-    max_wait = 10
-    for i in range(max_wait):
-        with data_lock:
-            pico1_ready = pico_data["PICO_1"]["last_frame"] is not None
-            pico2_ready = pico_data["PICO_2"]["last_frame"] is not None
-
-        if pico1_ready and pico2_ready:
-            break
-
-        print(f"Waiting for sensor data... ({i+1}/{max_wait})")
-        time.sleep(1)
-
-    # Calibrate both
-    pico1_ok = calibrate_sensor("PICO_1")
-    time.sleep(0.5)
-    pico2_ok = calibrate_sensor("PICO_2")
-
-    if pico1_ok and pico2_ok:
-        print("\n✓ AUTO-CALIBRATION COMPLETE - System ready for ball detection!")
-        print("="*70 + "\n")
-        return True
-    else:
-        print("\n⚠ AUTO-CALIBRATION INCOMPLETE - Some sensors failed")
-        print("="*70 + "\n")
-        return False
-
-def process_smart_ball_detection(pico_name, zones):
+def process_ball_detection(pico_name, zones):
     """
     SMART BALL DETECTION with calibration baseline
     - Checks if sensor is calibrated
@@ -462,12 +464,10 @@ def process_smart_ball_detection(pico_name, zones):
         # ✅ SMART DECISION: ADD or SUBTRACT based on final distance
         if min_distance < VERY_CLOSE_THRESHOLD:
             # Ball hit VERY CLOSE to this sensor = Ball bounced on THIS side = OTHER team scored
-            action = "subtract"
             target_team = get_opposite_team(team)
             print(f"🎾 Ball VERY CLOSE on {pico_name} ({min_distance}mm) → OTHER team scored → ADD to {target_team.upper()}")
         else:
             # Ball passed but didn't get very close = Ball went over net = THIS team scored
-            action = "add"
             target_team = team
             print(f"🎾 Ball detected on {pico_name} (Distance: {min_distance}mm, Drop: {distance_drop:.0f}mm) → ADD to {team.upper()}")
 
@@ -476,12 +476,6 @@ def process_smart_ball_detection(pico_name, zones):
             process_add_point(target_team)
         else:
             print(f"⚠ Ball detected but game mode not selected - ignoring")
-
-
-def get_opposite_team(team):
-    """Get the opposite team"""
-    return "yellow" if team == "black" else "black"
-
 
 def start_pico_readers():
     """Start reader threads for both Picos"""
@@ -1315,49 +1309,6 @@ def get_sensor_mapping():
     """Get current Pico to team mapping"""
     return jsonify({"success": True, "mapping": sensor_mapping})
 
-
-@app.route("/calibrate", methods=["POST"])
-def manual_calibrate():
-    """Manually trigger calibration for one or both sensors"""
-    try:
-        data = request.get_json() or {}
-        pico = data.get("pico", "all")  # "PICO_1", "PICO_2", or "all"
-
-        results = {}
-
-        if pico == "all" or pico == "PICO_1":
-            results["PICO_1"] = calibrate_sensor("PICO_1")
-
-        if pico == "all" or pico == "PICO_2":
-            results["PICO_2"] = calibrate_sensor("PICO_2")
-
-        return jsonify({
-            "success": all(results.values()),
-            "results": results,
-            "message": "Calibration complete" if all(results.values()) else "Some calibrations failed"
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/calibration_status", methods=["GET"])
-def get_calibration_status():
-    """Get current calibration status for both sensors"""
-    with data_lock:
-        status = {
-            "PICO_1": {
-                "calibrated": pico_data["PICO_1"]["calibrated"],
-                "baseline": pico_data["PICO_1"]["baseline_distance"],
-                "team": sensor_mapping["pico_1_team"]
-            },
-            "PICO_2": {
-                "calibrated": pico_data["PICO_2"]["calibrated"],
-                "baseline": pico_data["PICO_2"]["baseline_distance"],
-                "team": sensor_mapping["pico_2_team"]
-            }
-        }
-
-    return jsonify({"success": True, "calibration": status})
-
 @app.route("/health", methods=["GET"])
 def healthcheck():
     logoexists = os.path.exists("logo.png")
@@ -1413,11 +1364,7 @@ if __name__ == "__main__":
     print("  COMPETITION/LOCK: Switch after odd games (1,3,5,7...).")
     print("                     ❌ NO switch after match won")
     print("=" * 70)
-    print("DETECTION SETTINGS:")
-    print(f"  Distance drop threshold: {DISTANCE_DROP_THRESHOLD}mm")
-    print(f"  Very close threshold: {VERY_CLOSE_THRESHOLD}mm")
-    print(f"  Debounce time: {MIN_TIME_BETWEEN_HITS}s")
-    print("="*70)    print("✅ Smart ball detection active")
+    print("✅ Automatic ball detection via distance sensors")
     print("✅ Detection threshold: {}mm".format(DETECTION_THRESHOLD))
     print("=" * 70)
     print("Socket.IO enabled for real-time updates")
@@ -1427,20 +1374,10 @@ if __name__ == "__main__":
     validation_thread = threading.Thread(target=run_initial_sensor_validation, daemon=True)
     validation_thread.start()
 
-
     # Start Pico reader threads
     time.sleep(3)
     if sensor_validation["validated"] or sensor_validation["status"] == "warning":
         start_pico_readers()
-
-        # Auto-calibrate sensors after 5 seconds
-        def delayed_calibration():
-            time.sleep(5)
-            auto_calibrate_all_sensors()
-
-        calibration_thread = threading.Thread(target=delayed_calibration, daemon=True)
-        calibration_thread.start()
-
 
     try:
         socketio.run(app, debug=False, host="127.0.0.1", port=5000, allow_unsafe_werkzeug=True)
